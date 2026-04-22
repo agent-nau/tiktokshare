@@ -21,6 +21,16 @@ from aiohttp import web
 from data.lists import PLATFORMS, DEVICE_TYPES, APP_DOMAINS, CHANNELS
 from data.user_agents import USER_AGENTS
 
+import logging
+
+# Set up logging to console
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%H:%M:%S'
+)
+logger = logging.getLogger("bot")
+
 # -- SSL workaround --
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -145,6 +155,26 @@ class ShareBot:
         await self.session.close()
 
 
+# -- Middleware for logging and error handling --
+@web.middleware
+async def request_logger_middleware(request, handler):
+    logger.info(f"[{request.method}] {request.path}")
+    try:
+        response = await handler(request)
+        logger.info(f"  [>] {response.status}")
+        return response
+    except web.HTTPException as ex:
+        logger.warning(f"  [!] HTTP Exception: {ex.status} - {ex.reason}")
+        if request.path.startswith("/api/"):
+            return web.json_response({"error": ex.reason}, status=ex.status)
+        raise ex
+    except Exception as ex:
+        logger.error(f"  [!] Server error: {str(ex)}", exc_info=True)
+        if request.path.startswith("/api/"):
+            return web.json_response({"error": "Internal server error: " + str(ex)}, status=500)
+        raise ex
+
+
 # -- Web server handlers --
 async def handle_index(request):
     html_path = os.path.join(os.path.dirname(__file__), "index.html")
@@ -179,7 +209,9 @@ async def handle_start(request):
         # Allow custom URL/amount from POST body
         try:
             body = await request.json()
-        except Exception:
+            logger.info(f"  [>] Body: {body}")
+        except Exception as e:
+            logger.warning(f"  [!] Failed to parse JSON body: {e}")
             body = {}
 
         if "url" in body and body["url"].strip():
@@ -237,17 +269,18 @@ async def main():
     print("=" * 60)
     print("")
 
-    app = web.Application()
+    app = web.Application(middlewares=[request_logger_middleware])
     app.router.add_get("/", handle_index)
+    app.router.add_get("/index.html", handle_index)
     app.router.add_get("/api/status", handle_status)
     app.router.add_post("/api/start", handle_start)
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "localhost", 8080)
+    site = web.TCPSite(runner, "0.0.0.0", 8080)
     await site.start()
 
-    print("  Dashboard running at: http://localhost:8080")
+    print(f"  Dashboard running at: http://localhost:8080")
     print("  Open that URL in your browser to control the bot!")
     print("")
 

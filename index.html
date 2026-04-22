@@ -517,15 +517,23 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url, amount: amount })
                 });
-                const data = await resp.json();
 
-                if (data.error) {
-                    addLog('Error: ' + data.error, 'error');
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    let errMsg = 'Server error (' + resp.status + ')';
+                    try {
+                        const json = JSON.parse(text);
+                        if (json.error) errMsg = json.error;
+                    } catch (e) {
+                        errMsg += ': ' + text.substring(0, 50) + '...';
+                    }
+                    addLog('Error: ' + errMsg, 'error');
                     btn.disabled = false;
                     btn.textContent = 'Launch Shares';
                     return;
                 }
 
+                const data = await resp.json();
                 addLog('Bot started!', 'success');
                 startPolling();
 
