@@ -38,8 +38,17 @@ class ShareVariables:
     failed_requests     = 0
     completed           = False
     video_id            = ""
-    status_msg          = "Initializing..."
+    status_msg          = "Waiting to start..."
     started             = False
+
+    def reset(self):
+        self.sent_requests       = 0
+        self.successful_requests = 0
+        self.failed_requests     = 0
+        self.completed           = False
+        self.video_id            = ""
+        self.status_msg          = "Initializing..."
+        self.started             = False
 
 
 share_vars = ShareVariables()
@@ -158,23 +167,33 @@ async def handle_status(request):
 
 async def handle_start(request):
     """Start the share bot via the web UI."""
-    if share_vars.started:
-        return web.json_response({"error": "Already running"}, status=400)
-    # Allow custom URL/amount from POST body
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
     global VIDEO_URL, SHARE_AMOUNT
-    if "url" in body and body["url"].strip():
-        VIDEO_URL = body["url"].strip()
-    if "amount" in body:
+    try:
+        # If already running (not yet completed), reject
+        if share_vars.started and not share_vars.completed:
+            return web.json_response({"error": "Already running"}, status=400)
+
+        # Reset state for a fresh run
+        share_vars.reset()
+
+        # Allow custom URL/amount from POST body
         try:
-            SHARE_AMOUNT = int(body["amount"])
-        except ValueError:
-            pass
-    asyncio.ensure_future(run_shares())
-    return web.json_response({"status": "started"})
+            body = await request.json()
+        except Exception:
+            body = {}
+
+        if "url" in body and body["url"].strip():
+            VIDEO_URL = body["url"].strip()
+        if "amount" in body:
+            try:
+                SHARE_AMOUNT = int(body["amount"])
+            except ValueError:
+                pass
+
+        asyncio.ensure_future(run_shares())
+        return web.json_response({"status": "started"})
+    except Exception as exc:
+        return web.json_response({"error": str(exc)}, status=500)
 
 
 # -- Core share logic --
@@ -188,6 +207,7 @@ async def run_shares():
     except Exception as exc:
         share_vars.status_msg = "ERROR: " + str(exc)
         share_vars.completed = True
+        share_vars.started = False  # allow re-run after error
         print("  [!] " + str(exc))
         return
 
