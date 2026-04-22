@@ -24,4 +24,11 @@ DEVICE_TYPES = ["iPhone1,1", "iPhone1,2", "iPhone2,1", "iPhone3,1", "iPhone3,2",
                 "SM-A037G", "SM-A225F", "SM-M325FV", "SM-A226B", "SM-M426B", "SM-A525F"]
 PLATFORMS = ["android", "windows", "iphone", "web"]
 CHANNELS = ["tiktok_web", "googleplay", "App%20Store"]
-APP_DOMAINS = ["api19-core-useast5.us.tiktokv.com"]
+APP_DOMAINS = [
+    "api16-core-c-useast1a.tiktokv.com",
+    "api-h2.tiktokv.com",
+    "api16-normal-quic-useast2a.tiktokv.com",
+    "api-core-c-hkg.tiktokv.com",
+    "api-normal-c-hkg.tiktokv.com",
+    "api19-core-useast5.us.tiktokv.com"
+]

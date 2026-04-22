@@ -38,7 +38,7 @@ except AttributeError:
     pass
 
 # -- Configuration --
-VIDEO_URL    = "https://vt.tiktok.com/zs9rcfhds/"
+VIDEO_URL    = ""
 SHARE_AMOUNT = 1000
 
 # -- Shared state --
@@ -66,32 +66,61 @@ share_vars = ShareVariables()
 
 # -- Helper: resolve short URL to video ID --
 async def resolve_video_id(url):
+    # If the user already provided a numeric ID, just use it
+    if url.isdigit() and len(url) > 10:
+        return url
+
     connector = aiohttp.TCPConnector(ssl=False)
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
     }
+    
     async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-        parsed = urlparse(url)
-        host   = (parsed.hostname or "").lower()
-        if host in ("vm.tiktok.com", "vt.tiktok.com"):
-            async with session.get(url, allow_redirects=True) as resp:
-                final_url = str(resp.url)
-                print("  Redirected to: " + final_url)
-            parsed = urlparse(final_url)
-        parts = parsed.path.split("/")
-        # Try to find a numeric video ID in the path
-        for part in reversed(parts):
-            if part.isdigit() and len(part) > 10:
-                return part
-        # Also check query params for item_id or video_id
-        from urllib.parse import parse_qs
-        qs = parse_qs(parsed.query)
-        for key in ("item_id", "video_id"):
-            if key in qs:
-                return qs[key][0]
-        raise ValueError("Could not extract video ID from: " + final_url if 'final_url' in dir() else url)
+        current_url = url
+        # Manual redirect following to handle stubborn cases
+        for _ in range(5):
+            async with session.get(current_url, allow_redirects=False) as resp:
+                if resp.status in (301, 302, 307, 308):
+                    new_url = resp.headers.get("Location")
+                    if new_url:
+                        if new_url.startswith("/"):
+                            parsed_orig = urlparse(current_url)
+                            new_url = f"{parsed_orig.scheme}://{parsed_orig.netloc}{new_url}"
+                        current_url = new_url
+                        logger.info(f"  [>] Redirected to: {current_url}")
+                        continue
+                
+                # Check current URL for video ID
+                parsed = urlparse(current_url)
+                parts = parsed.path.strip("/").split("/")
+                
+                # Check for /video/123456789...
+                if "video" in parts:
+                    idx = parts.index("video")
+                    if idx + 1 < len(parts) and parts[idx+1].isdigit():
+                        return parts[idx+1]
+                
+                # Check for numeric parts
+                for part in reversed(parts):
+                    if part.isdigit() and len(part) > 10:
+                        return part
+                
+                # Check query params
+                from urllib.parse import parse_qs
+                qs = parse_qs(parsed.query)
+                for key in ("item_id", "video_id"):
+                    if key in qs:
+                        return qs[key][0]
+                
+                # If we're at the end and haven't found it, break
+                break
+
+        raise ValueError(f"Could not extract video ID. If this persists, try entering the 19-digit Video ID directly. Current URL: {current_url}")
 
 
 # -- Share bot --
