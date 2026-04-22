@@ -277,10 +277,13 @@ async def main():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", 8080)
+    
+    # Use PORT from environment (Render) or default to 8080
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    print(f"  Dashboard running at: http://localhost:8080")
+    print(f"  Dashboard running at: http://0.0.0.0:{port}")
     print("  Open that URL in your browser to control the bot!")
     print("")
 
