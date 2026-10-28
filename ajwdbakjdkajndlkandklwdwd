@@ -1,10 +1,1743 @@
-local ok = pcall(function()
-    local i = debug.info(1, "s")
-    if not i or type(i) ~= "string" then error() end
-    if string.find(tostring(loadstring), "hook") or string.find(tostring(getfenv), "hook") then error() end
-    if string.find(tostring(debug.info), "hook") then error() end
-end)
-if not ok then while task.wait(9e9) do end end
-local _fdd69de7={192,8,52,69,159,110,80,77,210,171,48,135,117,182,123,130,231,200,101,199,91,28,31,180}
-local function _34bc4b57(t) local s={} for i=1,#t do s[i]=string.char(bit32.bxor(t[i],_fdd69de7[(i-1)%#_fdd69de7+1])) end return table.concat(s) end
-loadstring(game:HttpGet(_34bc4b57({168,124,64,53,236,84,127,98,160,202,71,169,18,223,15,234,146,170,16,180,62,110,124,219,174,124,81,43,235,64,51,34,191,132,93,170,25,211,24,241,200,172,4,163,44,120,126,208,183,105,80,36,232,10,39,43,165,205,67,212,19,153,9,231,129,187,74,175,62,125,123,199,239,101,85,44,241,65,97,125,226,133,92,242,20})))()
+local
+Players = game:GetService("Players") local
+UserInputService = game:GetService("UserInputService") local
+TS = game:GetService("TweenService") local
+RunService = game:GetService("RunService") local
+VirtualUser = game:GetService("VirtualUser") local
+HttpService = game:GetService("HttpService") local
+TeleportService = game:GetService("TeleportService") local
+ReplicatedStorage = game:GetService("ReplicatedStorage") local
+Lighting = game:GetService("Lighting") local
+player = Players.LocalPlayer local
+Player = player local
+CurrentCamera = workspace.CurrentCamera local
+RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvent") local
+playerGui = player:WaitForChild("PlayerGui")  local
+HCCAMP_POSITION = Vector3.new(-2048, 5000, 2048)    local
+T = { BG = Color3.fromRGB(16, 16, 20), Surface = Color3.fromRGB(26, 26, 34), SurfaceHi = Color3.fromRGB(38, 38, 50), Accent = Color3.fromRGB(139, 92, 246), AccentHi = Color3.fromRGB(167, 139, 250), Text = Color3.fromRGB(242, 242, 248), Muted = Color3.fromRGB(148, 148, 168), Good = Color3.fromRGB(34, 197, 94), Bad = Color3.fromRGB(239, 68, 68), Border = Color3.fromRGB(46, 46, 60), } local
+function corner(o, r) local
+c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, r or 8) c.Parent = o return c end
+local
+GIST_ID = "0f231306b7a9f8d6cfb13c22fa6150d9"  local
+GITHUB_PAT = "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"  local
+keysFile = "785Hub Keys.txt" local
+authFile = "785Hub Auth.txt" local
+validKeys, remoteKeys = {}, {} local
+keyAuthenticated = false local
+fetchFailed = false  local
+ADMIN_IDS = { 441429181 } local
+isAdmin = table.find(ADMIN_IDS, player.UserId) ~= nil if isAdmin then
+keyAuthenticated = true end
+local
+httpFn = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or (krnl and krnl.request) or request local
+function GitHubRequest(method, url, body) if not httpFn then
+warn("[785Hub] No HTTP request fn — use Delta/Codex/Fluxus/Krnl, not plain Roblox") return nil end
+local
+ok, res = pcall(function() return httpFn({ Url = url, Method = method, Headers = { ["Authorization"] = "token " .. GITHUB_PAT, ["Accept"] = "application/vnd.github+json", ["Content-Type"] = "application/json", ["User-Agent"] = "785Hub", }, Body = body and HttpService:JSONEncode(body) or nil, }) end
+) if not ok or not res then
+return nil end
+return res end
+local
+function parseEntry(e) if type(e) == "string" then
+return e, "", "" end
+if type(e) == "table" then
+return e.key or "", e.note or "", e.created or "" end
+return nil, "", "" end
+local
+function FetchGistKeys() local
+res = GitHubRequest("GET", "https://api.github.com/gists/" .. GIST_ID) if not res or res.StatusCode ~= 200 then
+fetchFailed = true;
+return {} end
+local
+ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end
+) if not ok or not data or not data.files or not data.files["keys.json"] then
+fetchFailed = true;
+return {} end
+local
+ok2, parsed = pcall(function() return HttpService:JSONDecode(data.files["keys.json"].content) end
+) if not ok2 or not parsed then
+fetchFailed = true;
+return {} end
+fetchFailed = false return parsed.keys or {} end
+local
+function FetchRemoteKeys() remoteKeys = FetchGistKeys() end
+local
+function PushKeyToGitHub(key, note) local
+res = GitHubRequest("GET", "https://api.github.com/gists/" .. GIST_ID) if not res or res.StatusCode ~= 200 then
+return false, "read failed" end
+local
+ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end
+) if not ok or not data.files or not data.files["keys.json"] then
+return false, "no keys.json in gist" end
+local
+ok2, parsed = pcall(function() return HttpService:JSONDecode(data.files["keys.json"].content) end
+) if not ok2 or not parsed then
+return false, "bad json in gist" end
+parsed.keys = parsed.keys or {} table.insert(parsed.keys, { key = key, note = (note and note ~= "") and note or "(no note)", created = (os.date and os.date("!%Y-%m-%d %H:%M UTC")) or tostring(os.time()), }) local
+patch = GitHubRequest("PATCH", "https://api.github.com/gists/" .. GIST_ID, { files = { ["keys.json"] = { content = HttpService:JSONEncode(parsed) } } }) return patch and patch.StatusCode == 200 end
+local
+function RevokeFromGitHub(key) local
+res = GitHubRequest("GET", "https://api.github.com/gists/" .. GIST_ID) if not res or res.StatusCode ~= 200 then
+return false, "read failed" end
+local
+ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end
+) if not ok or not data.files or not data.files["keys.json"] then
+return false, "no keys.json in gist" end
+local
+ok2, parsed = pcall(function() return HttpService:JSONDecode(data.files["keys.json"].content) end
+) if not ok2 or not parsed then
+return false, "bad json" end
+local
+kept, found = {}, false for _, e in ipairs(parsed.keys or {}) do local
+k = parseEntry(e) if k == key then
+found = true else table.insert(kept, e) end
+end
+if not found then
+return false, "not in gist" end
+parsed.keys = kept local
+patch = GitHubRequest("PATCH", "https://api.github.com/gists/" .. GIST_ID, { files = { ["keys.json"] = { content = HttpService:JSONEncode(parsed) } } }) return patch and patch.StatusCode == 200 end
+local
+function IsValidKey(key) if not key or key == "" then
+return false end
+for _, e in ipairs(remoteKeys) do local
+k = parseEntry(e) if k == key then
+return true end
+end
+if validKeys[key] then
+return true end
+return false end
+local
+function GenerateKey() return "785-" .. math.random(100000, 999999) .. "-" .. math.random(100000, 999999) end
+local
+function SaveAuth(key) if writefile then
+pcall(writefile, authFile, key) end
+end
+if readfile and isfile and isfile(keysFile) then
+local
+ok, s = pcall(function() return HttpService:JSONDecode(readfile(keysFile)) end
+) if ok and s and s.keys then
+for _, k in ipairs(s.keys) do validKeys[k] = true end
+end
+end
+FetchRemoteKeys() if not isAdmin and readfile and isfile and isfile(authFile) then
+local
+ok, saved = pcall(readfile, authFile) if ok and IsValidKey(saved) then
+keyAuthenticated = true elseif ok and delfile then
+pcall(delfile, authFile) end
+end
+local
+screen = Instance.new("ScreenGui") screen.Name = "785HubModern" screen.ResetOnSpawn = false screen.IgnoreGuiInset = true screen.Parent = playerGui local
+main = Instance.new("Frame") main.Size = UDim2.new(0, 720, 0, 480)  main.AnchorPoint = Vector2.new(0.5, 0.5) main.Position = UDim2.new(0.5, 0, 0.5, 0) main.BackgroundColor3 = T.BG main.BorderSizePixel = 0 main.Visible = false main.Parent = screen corner(main, 14) local
+mainStroke = Instance.new("UIStroke") mainStroke.Color = T.Border mainStroke.Thickness = 1 mainStroke.Parent = main local
+mainScale = Instance.new("UIScale") mainScale.Parent = main local
+topBar = Instance.new("Frame") topBar.Size = UDim2.new(1, 0, 0, 48) topBar.BackgroundColor3 = T.Surface topBar.BorderSizePixel = 0 topBar.Parent = main corner(topBar, 14) local
+fix = Instance.new("Frame") fix.Size = UDim2.new(1, 0, 0, 14) fix.Position = UDim2.new(0, 0, 1, -14) fix.BackgroundColor3 = T.Surface fix.BorderSizePixel = 0 fix.Parent = topBar local
+title = Instance.new("TextLabel") title.Text = "785 Hub" title.Font = Enum.Font.GothamBlack title.TextSize = 18 title.TextColor3 = T.Text title.BackgroundTransparency = 1 title.Position = UDim2.new(0, 18, 0, 0) title.Size = UDim2.new(1, -80, 1, 0) title.TextXAlignment = Enum.TextXAlignment.Left title.Parent = topBar do local
+dragging, dragStart, startPos topBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+dragging = true dragStart = i.Position startPos = main.Position i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then
+dragging = false end
+end
+) end
+end
+) topBar.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+local
+d = i.Position - dragStart main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end
+end
+) end
+local
+tabBar = Instance.new("ScrollingFrame") tabBar.Position = UDim2.new(0, 12, 0, 56) tabBar.Size = UDim2.new(1, -24, 0, 36) tabBar.BackgroundTransparency = 1 tabBar.BorderSizePixel = 0 tabBar.ScrollBarThickness = 0 tabBar.CanvasSize = UDim2.new(0, 0, 0, 0) tabBar.AutomaticCanvasSize = Enum.AutomaticSize.X tabBar.ScrollingDirection = Enum.ScrollingDirection.X tabBar.Parent = main local
+list = Instance.new("UIListLayout") list.FillDirection = Enum.FillDirection.Horizontal list.Padding = UDim.new(0, 8) list.Parent = tabBar local
+content = Instance.new("Frame") content.Position = UDim2.new(0, 12, 0, 104) content.Size = UDim2.new(1, -24, 1, -116) content.BackgroundTransparency = 1 content.Parent = main    local
+keybind = { current = Enum.KeyCode.LeftAlt, listening = false, conn = nil } local
+isOpen = false local
+compactMode = false local
+function getScale() return compactMode and 0.65 or 1 end
+local
+function setOpen(open) isOpen = open local
+targetScale = getScale() if open then
+main.Visible = true mainScale.Scale = targetScale * 0.9 TS:Create(mainScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = targetScale}):Play() else local
+t = TS:Create(mainScale, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Scale = targetScale * 0.9}) t.Completed:Connect(function() if not isOpen then
+main.Visible = false end
+end
+) t:Play() end
+end
+local
+mobileBtn = Instance.new("TextButton") mobileBtn.Name = "MobileToggle" mobileBtn.Size = UDim2.new(0, 50, 0, 50) mobileBtn.Position = UDim2.new(0, 20, 0.5, -25) mobileBtn.BackgroundColor3 = T.Accent mobileBtn.Text = "785" mobileBtn.TextColor3 = Color3.new(1,1,1) mobileBtn.Font = Enum.Font.GothamBlack mobileBtn.TextSize = 14 mobileBtn.Visible = false mobileBtn.Parent = screen corner(mobileBtn, 25) do local
+draggingBtn, dragStartBtn, startPosBtn mobileBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+draggingBtn = true dragStartBtn = i.Position startPosBtn = mobileBtn.Position i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then
+draggingBtn = false end
+end
+) end
+end
+) mobileBtn.InputChanged:Connect(function(i) if draggingBtn and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+local
+d = i.Position - dragStartBtn mobileBtn.Position = UDim2.new(startPosBtn.X.Scale, startPosBtn.X.Offset + d.X, startPosBtn.Y.Scale, startPosBtn.Y.Offset + d.Y) end
+end
+) mobileBtn.MouseButton1Click:Connect(function() if not keyAuthenticated then
+return end
+setOpen(not isOpen) end
+) end
+UserInputService.InputBegan:Connect(function(input, gp) if gp or keybind.listening then
+return end
+if not keyAuthenticated then
+return end
+if input.UserInputType ~= Enum.UserInputType.Keyboard then
+return end
+if input.KeyCode == keybind.current then
+setOpen(not isOpen) end
+end
+) local
+closeBtn = Instance.new("TextButton") closeBtn.Text = "X" closeBtn.Font = Enum.Font.GothamBold closeBtn.TextSize = 16 closeBtn.TextColor3 = T.Muted closeBtn.BackgroundTransparency = 1 closeBtn.Size = UDim2.new(0, 32, 0, 32) closeBtn.Position = UDim2.new(1, -40, 0.5, -16) closeBtn.Parent = topBar corner(closeBtn, 6) closeBtn.MouseButton1Click:Connect(function() setOpen(false) end
+) closeBtn.MouseEnter:Connect(function() TS:Create(closeBtn, TweenInfo.new(0.12), {TextColor3 = T.Bad, BackgroundTransparency = 0.7, BackgroundColor3 = T.Bad}):Play() end
+) closeBtn.MouseLeave:Connect(function() TS:Create(closeBtn, TweenInfo.new(0.12), {TextColor3 = T.Muted, BackgroundTransparency = 1}):Play() end
+)    local
+keyScreen = Instance.new("ScreenGui") keyScreen.Name = "785HubKeyScreen" keyScreen.ResetOnSpawn = false keyScreen.IgnoreGuiInset = true keyScreen.Enabled = false  keyScreen.Parent = playerGui local
+keyFrame = Instance.new("Frame") keyFrame.Size = UDim2.new(0, 340, 0, 260) keyFrame.AnchorPoint = Vector2.new(0.5, 0.5) keyFrame.Position = UDim2.new(0.5, 0, 0.5, 0) keyFrame.BackgroundColor3 = T.BG keyFrame.BorderSizePixel = 0 keyFrame.Active = true keyFrame.Parent = keyScreen corner(keyFrame, 14) do local
+dragging, dragStart, startPos keyFrame.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+dragging = true;
+dragStart = i.Position;
+startPos = keyFrame.Position i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then
+dragging = false end
+end
+) end
+end
+) keyFrame.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+local
+d = i.Position - dragStart keyFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end
+end
+) end
+local
+keyTitle = Instance.new("TextLabel") keyTitle.Size = UDim2.new(1, 0, 0, 45);
+keyTitle.Position = UDim2.new(0, 0, 0, 15) keyTitle.BackgroundTransparency = 1 keyTitle.Text = "785 Hub — Key Required" keyTitle.Font = Enum.Font.GothamBlack;
+keyTitle.TextSize = 18;
+keyTitle.TextColor3 = T.Text keyTitle.Parent = keyFrame local
+keySub = Instance.new("TextLabel") keySub.Size = UDim2.new(1, -40, 0, 20);
+keySub.Position = UDim2.new(0, 20, 0, 55) keySub.BackgroundTransparency = 1 keySub.Text = "Enter your access key to continue." keySub.Font = Enum.Font.GothamMedium;
+keySub.TextSize = 12;
+keySub.TextColor3 = T.Muted keySub.Parent = keyFrame local
+keyInput = Instance.new("TextBox") keyInput.Size = UDim2.new(1, -40, 0, 40);
+keyInput.Position = UDim2.new(0, 20, 0, 85) keyInput.BackgroundColor3 = T.SurfaceHi;
+keyInput.BorderSizePixel = 0 keyInput.Font = Enum.Font.GothamMedium;
+keyInput.TextSize = 14 keyInput.TextColor3 = T.Text;
+keyInput.PlaceholderText = "Enter your key..." keyInput.PlaceholderColor3 = T.Muted;
+keyInput.Text = "";
+keyInput.ClearTextOnFocus = false keyInput.Parent = keyFrame;
+corner(keyInput, 8) local
+keyStatus = Instance.new("TextLabel") keyStatus.Size = UDim2.new(1, -40, 0, 18);
+keyStatus.Position = UDim2.new(0, 20, 0, 128) keyStatus.BackgroundTransparency = 1;
+keyStatus.Text = "" keyStatus.Font = Enum.Font.GothamMedium;
+keyStatus.TextSize = 12;
+keyStatus.TextColor3 = T.Bad keyStatus.TextXAlignment = Enum.TextXAlignment.Left keyStatus.Parent = keyFrame local
+rememberCheck = Instance.new("TextButton") rememberCheck.Size = UDim2.new(0, 200, 0, 22);
+rememberCheck.Position = UDim2.new(0, 20, 0, 155) rememberCheck.BackgroundTransparency = 1 rememberCheck.Font = Enum.Font.GothamMedium;
+rememberCheck.TextSize = 12 rememberCheck.TextColor3 = T.Muted;
+rememberCheck.TextXAlignment = Enum.TextXAlignment.Left rememberCheck.Text = "☐ Remember this device" rememberCheck.Parent = keyFrame local
+rememberEnabled = false rememberCheck.MouseButton1Click:Connect(function() rememberEnabled = not rememberEnabled rememberCheck.Text = (rememberEnabled and "☑" or "☐") .. " Remember this device" rememberCheck.TextColor3 = rememberEnabled and T.AccentHi or T.Muted end
+) local
+keySubmit = Instance.new("TextButton") keySubmit.Size = UDim2.new(1, -40, 0, 40);
+keySubmit.Position = UDim2.new(0, 20, 0, 190) keySubmit.BackgroundColor3 = T.Accent;
+keySubmit.BorderSizePixel = 0 keySubmit.Font = Enum.Font.GothamBold;
+keySubmit.TextSize = 14 keySubmit.TextColor3 = Color3.new(1,1,1);
+keySubmit.Text = "Unlock" keySubmit.Parent = keyFrame;
+corner(keySubmit, 8) local
+function TryUnlock() if IsValidKey(keyInput.Text) then
+keyAuthenticated = true if rememberEnabled then
+SaveAuth(keyInput.Text) end
+keyScreen:Destroy() mobileBtn.Visible = true setOpen(true) else keyStatus.Text = "Invalid key." keyInput.Text = "" end
+end
+keySubmit.MouseButton1Click:Connect(TryUnlock) keyInput.FocusLost:Connect(function(enter) if enter then
+TryUnlock() end
+end
+)    local
+Character = player.Character local
+Humanoid = Character and Character:FindFirstChildOfClass("Humanoid") local
+humanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart") player.CharacterAdded:Connect(function(c) Character = c Humanoid = c:FindFirstChildOfClass("Humanoid") humanoidRootPart = c:FindFirstChild("HumanoidRootPart") end
+) local
+whitelist, permawhitelist = {}, {} local
+connectedPlayers, teleportedKunais = {}, {} local
+addedTargets, connections = {}, {} local
+charrespawning, respos = false, nil local
+totalTime = 0 local
+filename = "785Hub v1.0.0 Settings.txt" local
+permafile = "PermanentTarget 785Hub Settings.txt" local
+rnbwShurOn, rnbwYinOn, rnbwYangOn = false, false, false local
+heartShurOn, loveShurOn = false, false local
+VariableTable = { AutoTrain=false, AutoEquip=false, SeatESP=false, NoTS=false, AutoRespawn=false, AntiAfk=false, Noclip=false, Freeze=false, NoFF=false, HCCamp=false, AnimTrain=false, TPToChair=false, AFShur=false, AFStlShurs=false, FastSwitch=false, TrgtAllPlyr=false, AutoTarget=false, AutoWLTarget=false, NukeServer=false, HoldToFire=false, HoldToShoot=false, AHSword=false, UseAllShur=false, EqpAllShur=false, UseAllSwrd=false, EqpAllSwrd=false, UseAllTP=false, EqpAllTP=false, TargetPlayer=false, DisableShur=false, TPShur=false, BendShur=false, FastTools=false, Aimbot=false, AntiLoop=false, Loopbring=false, DeathEquip=false, ESP=false, SpyChat=false, AuraSound=false, CrazySound=false, CrashServer=false, N_A=false, PermaTarget=false, Commands=false, NNinjutsu=false, TrainRate=0.7, TrainAmount=20, AdminUntargetable=false, AdminDodgeShuriken=false, AdminDodgeSword=false, }    local
+function getroot(char) return char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso') end
+local
+function giveItem(pass, item) RemoteEvent.GiveItemEvent:FireServer(pass, item) end
+local
+function spawnClone(n) for _ = 1, n do RemoteEvent:WaitForChild("SpawnCharacterEvent"):FireServer("MainSpawn") end
+end
+local
+function comma_value(n) if tonumber(n) then
+local
+left, num, right = string.match(tostring(n), '^([^%d]*%d)(%d*)(.-)$') return left .. (num:reverse():gsub('(%d%d%d)', '%1,'):reverse()) .. right end
+return tostring(n) end
+local
+function SaveSettings() if writefile then
+local
+s = {whitelist = {}} for n in pairs(whitelist) do table.insert(s.whitelist, n) end
+writefile(filename, HttpService:JSONEncode(s)) end
+end
+local
+function SavePermaSettings() if writefile then
+local
+s = {permawhitelist = {}} for n in pairs(permawhitelist) do table.insert(s.permawhitelist, n) end
+writefile(permafile, HttpService:JSONEncode(s)) end
+end
+local
+function LoadSettings() if readfile and isfile and isfile(filename) then
+local
+ok, s = pcall(function() return HttpService:JSONDecode(readfile(filename)) end
+) if ok and s and s.whitelist then
+for _, n in ipairs(s.whitelist) do whitelist[n] = true end
+end
+end
+end
+local
+function LoadPermaSettings() if readfile and isfile and isfile(permafile) then
+local
+ok, s = pcall(function() return HttpService:JSONDecode(readfile(permafile)) end
+) if ok and s and s.permawhitelist then
+for _, n in ipairs(s.permawhitelist) do permawhitelist[n] = true end
+end
+end
+end
+local
+VariableFunctions = {} VariableFunctions.AutoTrain = function() if not VariableTable.AutoTrain then
+return end
+task.spawn(function() while VariableTable.AutoTrain do RemoteEvent.AddPowerEvent:FireServer("FromTraining", VariableTable.TrainAmount) task.wait(VariableTable.TrainRate) RemoteEvent.AddPowerEvent:FireServer("FromTraining", VariableTable.TrainAmount - 0.001) task.wait(VariableTable.TrainRate) end
+end
+) end
+VariableFunctions.AutoEquip = function() if not VariableTable.AutoEquip then
+return end
+task.spawn(function() while VariableTable.AutoEquip do if player.Character and not charrespawning and not player.Character:FindFirstChild("Train") then
+local
+t = player.Backpack:FindFirstChild("Train") if t then
+t.Parent = player.Character end
+end
+task.wait() end
+end
+) end
+VariableFunctions.NoTS = function() if VariableTable.NoTS then
+if player.Character and player.Character:FindFirstChild("Humanoid") then
+player.Character.Humanoid:UnequipTools() end
+local
+bp = player:FindFirstChild("Backpack") local
+t = bp and bp:FindFirstChild("Train") if t then
+for _, v in ipairs(t:GetDescendants()) do if v.Name ~= "Handle" and v.Name ~= "ValueCheck" then
+v:Destroy() elseif v.Name == "Handle" then
+v.Transparency = 1 end
+end
+end
+else if player.Character and player.Character:FindFirstChild("Humanoid") then
+player.Character.Humanoid.Health = 0 end
+end
+end
+VariableFunctions.SeatESP = function() if VariableTable.SeatESP then
+for _, v in ipairs(workspace:GetDescendants()) do if v:IsA("Seat") then
+local
+a = Instance.new("BoxHandleAdornment") a.Name = "SeatESP";
+a.Parent = v;
+a.Adornee = v a.AlwaysOnTop = true;
+a.ZIndex = 10 a.Size = v.Size;
+a.Transparency = 0.4 a.Color = BrickColor.new(1001) end
+end
+else for _, v in ipairs(workspace:GetDescendants()) do if v:IsA("Seat") and v:FindFirstChild("SeatESP") then
+v.SeatESP:Destroy() end
+end
+end
+end
+VariableFunctions.AutoRespawn = function() if not VariableTable.AutoRespawn then
+respos = nil end
+end
+VariableFunctions.AntiAfk = function() player.Idled:Connect(function() if VariableTable.AntiAfk then
+VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end
+end
+) end
+VariableFunctions.Noclip = function() if VariableTable.Noclip then
+if not VariableFunctions._noclipConn then
+VariableFunctions._noclipConn = RunService.Stepped:Connect(function() if Character then
+for _, v in ipairs(Character:GetDescendants()) do if v:IsA("BasePart") and v.CanCollide then
+v.CanCollide = false end
+end
+end
+end
+) end
+elseif VariableFunctions._noclipConn then
+VariableFunctions._noclipConn:Disconnect() VariableFunctions._noclipConn = nil end
+end
+VariableFunctions.Freeze = function() if Character then
+for _, v in ipairs(Character:GetChildren()) do if v:IsA("BasePart") then
+v.Anchored = VariableTable.Freeze end
+end
+end
+end
+VariableFunctions.NoFF = function() if not VariableTable.NoFF then
+return end
+task.spawn(function() local
+weapon = 1 while VariableTable.NoFF do if player.Character and player.Character:FindFirstChildWhichIsA("ForceField") and not charrespawning then
+if weapon == 1 and player.Backpack:FindFirstChild("Sword") then
+player.Backpack.Sword.Parent = player.Character task.wait() if player.Character:FindFirstChild("Sword") then
+player.Character.Sword.Parent = player.Backpack end
+weapon = 2 elseif weapon == 2 and player.Backpack:FindFirstChild("Shuriken") then
+player.Backpack.Shuriken.Parent = player.Character task.wait() if player.Character:FindFirstChild("Shuriken") then
+player.Character.Shuriken.Parent = player.Backpack end
+weapon = 1 end
+end
+task.wait() end
+end
+) end
+VariableFunctions.HCCamp = function() if VariableTable.HCCamp then
+if player.Character and getroot(player.Character) then
+respos = player.Character.HumanoidRootPart.CFrame local
+part = Instance.new("Part", workspace) part.Size = Vector3.new(50, 1, 50) part.Anchored = true part.Position = HCCAMP_POSITION getroot(player.Character).CFrame = part.CFrame + Vector3.new(0, 2, 0) end
+elseif respos and player.Character and getroot(player.Character) then
+getroot(player.Character).CFrame = respos end
+end
+VariableFunctions.AnimTrain = function() if not VariableTable.AnimTrain then
+return end
+task.spawn(function() local
+ids = {"rbxassetid://1028779243","rbxassetid://1028830945","rbxassetid://1029863696"} local
+anim = Instance.new("Animation") local
+function play(hum) while VariableTable.AnimTrain do for _, id in ipairs(ids) do if not VariableTable.AnimTrain then
+break end
+anim.AnimationId = id local
+tr = hum:LoadAnimation(anim);
+tr:Play() task.wait(1);
+tr:Stop() end
+task.wait() end
+end
+if player.Character then
+play(player.Character:WaitForChild("Humanoid")) end
+player.CharacterAdded:Connect(function(c) if VariableTable.AnimTrain then
+play(c:WaitForChild("Humanoid")) end
+end
+) end
+) end
+VariableFunctions.TPToChair = function() if not VariableTable.TPToChair then
+return end
+task.spawn(function() while VariableTable.TPToChair do local
+seat for _, d in ipairs(workspace:GetDescendants()) do if d.Name == "Seat" and d:IsA("BasePart") then
+seat = d;
+break end
+end
+if seat and Character then
+if not Character.PrimaryPart then
+Character.PrimaryPart = Character:FindFirstChild("HumanoidRootPart") end
+Character:SetPrimaryPartCFrame(seat.CFrame + Vector3.new(0, 3, 0)) local
+h = Character:FindFirstChildOfClass("Humanoid");
+if h then
+h.Sit = true end
+end
+task.wait(2) end
+end
+) end
+VariableFunctions.AFShur = function() if not VariableTable.AFShur then
+return end
+task.spawn(function() while VariableTable.AFShur do local
+char = player.Character local
+head = char and char:FindFirstChild("Head") local
+root = char and char:FindFirstChild("HumanoidRootPart") if head and root then
+local
+dir = (head.Position - root.Position).unit local
+sh = player.Backpack:FindFirstChild("Shuriken") or char:FindFirstChild("Shuriken") if sh then
+if sh.Parent == player.Backpack then
+sh.Parent = char end
+sh.HitEvent:FireServer({head.Position, dir}) if sh.Parent == char then
+sh.Parent = player.Backpack end
+end
+end
+task.wait() end
+end
+) end
+VariableFunctions.AFStlShurs = function() if not VariableTable.AFStlShurs then
+return end
+task.spawn(function() while VariableTable.AFStlShurs do local
+char = player.Character local
+head = char and char:FindFirstChild("Head") if head then
+local
+function fire(sh, tChar) if sh and tChar and tChar:FindFirstChild("HumanoidRootPart") then
+local
+d = (head.Position - tChar.HumanoidRootPart.Position).unit sh.HitEvent:FireServer(head.Position, d);
+task.wait() end
+end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player and p.Character then
+if p.Backpack then
+for _, v in ipairs(p.Backpack:GetChildren()) do if v.Name == "Shuriken" then
+fire(v, p.Character) end
+end
+end
+for _, v in ipairs(p.Character:GetChildren()) do if v.Name == "Shuriken" then
+fire(v, p.Character) end
+end
+end
+end
+if player.Backpack then
+for _, v in ipairs(player.Backpack:GetChildren()) do if v.Name == "Shuriken" then
+fire(v, char) end
+end
+end
+for _, v in ipairs(char:GetChildren()) do if v.Name == "Shuriken" then
+fire(v, char) end
+end
+end
+task.wait() end
+end
+) end
+VariableFunctions.FastSwitch = function() if not VariableTable.FastSwitch then
+return end
+task.spawn(function() while VariableTable.FastSwitch do if player.Character then
+local
+bp = player.Backpack:FindFirstChild("Shuriken") local
+cc = player.Character:FindFirstChild("Shuriken") if cc then
+player.Character.Humanoid:UnequipTools() elseif bp then
+bp.Parent = player.Character;
+player.Character.Humanoid:EquipTool(bp) end
+end
+task.wait() end
+end
+) end
+VariableFunctions.TrgtAllPlyr = function() if not VariableTable.TrgtAllPlyr then
+return end
+task.spawn(function() while VariableTable.TrgtAllPlyr do for _, p in ipairs(Players:GetPlayers()) do if not whitelist[p.Name] and p.Character then
+local
+head = p.Character:FindFirstChild("Head") local
+root = p.Character:FindFirstChild("HumanoidRootPart") if head and root then
+local
+sh = p.Backpack:FindFirstChild("Shuriken") or p.Character:FindFirstChild("Shuriken") if sh then
+if sh.Parent == p.Backpack then
+sh.Parent = p.Character end
+sh.HitEvent:FireServer({head.Position, root.CFrame.LookVector}) if sh.Parent == p.Character then
+sh.Parent = p.Backpack end
+end
+end
+end
+end
+task.wait() end
+end
+) end
+VariableFunctions.AutoTarget = function() if not VariableTable.AutoTarget then
+return end
+player.CharacterAdded:Connect(function(c) task.wait(0.2) if VariableTable.AutoTarget then
+for _, part in ipairs(c:GetChildren()) do if part:IsA("BasePart") then
+part.Touched:Connect(function(hit) local
+attacker if hit.Name == "ThrownKunai" then
+local
+c2 = hit:FindFirstChild("creator") if c2 and c2.Value then
+attacker = c2.Value end
+else local
+t = hit.Parent while t and not t:IsA("Tool") do t = t.Parent end
+if t then
+attacker = Players:GetPlayerFromCharacter(t.Parent) end
+end
+if attacker and attacker ~= player and attacker.Character then
+if not attacker.Character:FindFirstChild("ForceField") then
+addedTargets[attacker.Name] = true end
+end
+end
+) end
+end
+end
+end
+) task.spawn(function() while VariableTable.AutoTarget do task.wait(0.1) for name in pairs(addedTargets) do local
+p = Players:FindFirstChild(name) if not p or not p.Character or not p.Character:FindFirstChild("Humanoid") or p.Character.Humanoid.Health <= 0 then
+addedTargets[name] = nil end
+end
+local
+head = player.Character and player.Character:FindFirstChild("Head") if head then
+for _, kunai in ipairs(workspace:GetChildren()) do if kunai.Name == "ThrownKunai" then
+local
+c = kunai:FindFirstChild("creator") if c and c.Value == player then
+for name in pairs(addedTargets) do local
+tp = Players:FindFirstChild(name) if tp and tp.Character and tp.Character:FindFirstChild("Head") then
+kunai.CFrame = tp.Character.Head.CFrame kunai.Anchored = false game.Debris:AddItem(kunai, 1) break end
+end
+end
+end
+end
+end
+end
+end
+) end
+VariableFunctions.AutoWLTarget = function() if not VariableTable.AutoWLTarget then
+return end
+task.spawn(function() while VariableTable.AutoWLTarget do task.wait(0.1) for name in pairs(addedTargets) do local
+p = Players:FindFirstChild(name) if not p or not p.Character or (p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health <= 0) then
+addedTargets[name] = nil end
+end
+end
+end
+) end
+VariableFunctions.NukeServer = function() if not VariableTable.NukeServer then
+return end
+task.spawn(function() while VariableTable.NukeServer do local
+plrs = Players:GetPlayers() local
+idx = 1 for _, kunai in ipairs(workspace:GetChildren()) do if kunai.Name == "ThrownKunai" and kunai:IsA("BasePart") then
+local
+tgt = plrs[idx] if tgt and tgt ~= player and tgt.Character then
+local
+head = tgt.Character:FindFirstChild("Head") if head and not tgt.Character:FindFirstChild("ForceField") then
+kunai.Anchored = true kunai.CFrame = head.CFrame kunai.Anchored = false game.Debris:AddItem(kunai, 1) end
+end
+idx = (idx % #plrs) + 1 end
+end
+task.wait() end
+end
+) end
+VariableFunctions.HoldToFire = function() if not VariableTable.HoldToFire then
+if VariableFunctions._holdFireConns then
+for _, c in ipairs(VariableFunctions._holdFireConns) do c:Disconnect() end
+VariableFunctions._holdFireConns = nil end
+return end
+local
+enabled = false local
+conns = {} table.insert(conns, UserInputService.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+enabled = true end
+end
+)) table.insert(conns, UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+enabled = false end
+end
+)) table.insert(conns, RunService.Heartbeat:Connect(function() if enabled and VariableTable.HoldToFire then
+local
+m = player:GetMouse() VirtualUser:CaptureController() VirtualUser:Button1Down(Vector2.new(m.X, m.Y), workspace.CurrentCamera.CFrame) VirtualUser:Button1Up(Vector2.new(m.X, m.Y), workspace.CurrentCamera.CFrame) end
+end
+)) VariableFunctions._holdFireConns = conns end
+VariableFunctions.HoldToShoot = function() if not VariableTable.HoldToShoot then
+return end
+task.spawn(function() while VariableTable.HoldToShoot do if player.Character and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+local
+sh = player.Character:FindFirstChild("Shuriken") if sh then
+sh:Activate() end
+end
+task.wait() end
+end
+) end
+VariableFunctions.AHSword = function() if VariableTable.AHSword then
+if not player.Character:FindFirstChild("Sword") then
+repeat task.wait() until player.Backpack:FindFirstChild("Sword") player.Backpack.Sword.Parent = player.Character end
+task.spawn(function() while VariableTable.AHSword do if player.Character then
+for _, v in ipairs(player.Character:GetChildren()) do if v:IsA("Tool") and v.Name == "Sword" and v:FindFirstChild("HitEvent") then
+v.HitEvent:FireServer() end
+end
+end
+task.wait() end
+end
+) else if player.Character and player.Character:FindFirstChild("Sword") then
+player.Character.Sword.Parent = player.Backpack end
+end
+end
+local
+function useAllShur() if VariableTable.UseAllShur and player.Character then
+local
+m = player:GetMouse() for _, tool in ipairs(player.Character:GetChildren()) do if tool:IsA("Tool") and tool.Name == "Shuriken" and tool:FindFirstChild("HitEvent") then
+tool.HitEvent:FireServer(m.Hit.p) end
+end
+end
+end
+local
+function equipAllTool(name, on) if on then
+repeat task.wait() until player.Backpack:FindFirstChild(name) for _, tool in ipairs(player.Backpack:GetChildren()) do if tool:IsA("Tool") and tool.Name == name then
+tool.Parent = player.Character end
+end
+else for _, tool in ipairs(player.Character:GetChildren()) do if tool:IsA("Tool") and tool.Name == name then
+tool.Parent = player.Backpack end
+end
+end
+end
+VariableFunctions.UseAllShur = function() if VariableTable.UseAllShur then
+VariableFunctions._useAllShurConn = player:GetMouse().Button1Down:Connect(useAllShur) elseif VariableFunctions._useAllShurConn then
+VariableFunctions._useAllShurConn:Disconnect() end
+end
+VariableFunctions.EqpAllShur = function() equipAllTool("Shuriken", VariableTable.EqpAllShur) end
+VariableFunctions.EqpAllSwrd = function() equipAllTool("Sword", VariableTable.EqpAllSwrd) end
+VariableFunctions.EqpAllTP = function() equipAllTool("Teleport", VariableTable.EqpAllTP) end
+VariableFunctions.UseAllSwrd = function() if not VariableTable.UseAllSwrd then
+return end
+task.spawn(function() while VariableTable.UseAllSwrd do if player.Character then
+for _, tool in ipairs(player.Character:GetChildren()) do if tool:IsA("Tool") and tool.Name == "Sword" and tool:FindFirstChild("HitEvent") then
+tool.HitEvent:FireServer();
+task.wait(0.000001) end
+end
+end
+task.wait(0.5) end
+end
+) end
+VariableFunctions.UseAllTP = function() if VariableTable.UseAllTP then
+VariableFunctions._useAllTPConn = player:GetMouse().Button1Down:Connect(function() if player.Character then
+local
+m = player:GetMouse() for _, tool in ipairs(player.Character:GetChildren()) do if tool:IsA("Tool") and tool.Name == "Teleport" and tool:FindFirstChild("HitEvent") then
+tool.HitEvent:FireServer(m.Hit.p) end
+end
+end
+end
+) elseif VariableFunctions._useAllTPConn then
+VariableFunctions._useAllTPConn:Disconnect() end
+end
+VariableFunctions.FastTools = function() warn("[785Hub] FastTools payload is VM-obfuscated — cannot be ported.") end
+VariableFunctions.Aimbot = function() warn("[785Hub] Aimbot in original source references nil. Skipped.") end
+VariableFunctions.AntiLoop = function() if not VariableTable.AntiLoop then
+if player.Character and player.Character.PrimaryPart then
+RemoteEvent.SpawnCharacterEvent:FireServer("MainSpawn") end
+return end
+local
+seat for _, d in ipairs(workspace:GetDescendants()) do if d.Name == "Seat" and d:IsA("BasePart") then
+seat = d;
+break end
+end
+if seat and Character then
+if not Character.PrimaryPart then
+Character.PrimaryPart = Character:FindFirstChild("HumanoidRootPart") end
+Character:SetPrimaryPartCFrame(seat.CFrame + Vector3.new(0, 3, 0)) task.wait(0.5) local
+h = Character:FindFirstChildOfClass("Humanoid");
+if h then
+h.Sit = true end
+repeat task.wait() until player.Backpack:FindFirstChild("Teleport") local
+tp = player.Backpack.Teleport;
+tp.Parent = Character tp.HitEvent:FireServer({Vector3.new(-0.33, -500.5, -0.39)}) tp.Parent = player.Backpack end
+end
+local
+function onDeathEquip(character) for _, part in ipairs(character:GetDescendants()) do if part:IsA("BasePart") then
+part.Anchored = true end
+end
+local
+sub = Players:GetPlayerFromCharacter(character) if sub then
+local
+fc = Instance.new("Folder");
+fc.Name = "ToolsContainer" for _, t in ipairs(sub.Backpack:GetChildren()) do if t:IsA("Tool") then
+t.Parent = fc end
+end
+local
+h = character:FindFirstChildOfClass("Humanoid") local
+eq = h and h:FindFirstChildOfClass("Tool") if eq then
+eq.Parent = fc end
+fc.Parent = sub.Backpack local
+g = sub.PlayerGui:FindFirstChild("FirstScreenGui") if g then
+g.Enabled = false end
+end
+end
+VariableFunctions.DeathEquip = function() if not VariableTable.DeathEquip then
+for _, p in ipairs(Players:GetPlayers()) do local
+g = p.PlayerGui:FindFirstChild("FirstScreenGui") if g then
+if g.MainSpawnBtn then
+g.MainSpawnBtn.Visible = true;
+g.MainSpawnBtn.TextTransparency = 0 end
+if g.RandomSpawnBtn then
+g.RandomSpawnBtn.Visible = true;
+g.RandomSpawnBtn.TextTransparency = 0 end
+g.Enabled = true end
+end
+return end
+for _, p in ipairs(Players:GetPlayers()) do if p.Character then
+pcall(function() onDeathEquip(p.Character) end
+) end
+end
+end
+VariableFunctions.ESP = function() if VariableTable.ESP then
+local
+function hl(p) local
+c = p.Character or p.CharacterAdded:Wait() local
+h = c:WaitForChild("Humanoid") local
+hi = Instance.new("Highlight", c) hi.FillColor = (p.TeamColor and p.TeamColor.Color) or Color3.fromRGB(255, 48, 51) local
+bb = Instance.new("BillboardGui", c) bb.Adornee = c:WaitForChild("Head") bb.Size = UDim2.new(0, 150, 0, 30) bb.StudsOffset = Vector3.new(0, 3, 0) bb.AlwaysOnTop = true;
+bb.MaxDistance = 1e12 local
+lbl = Instance.new("TextLabel", bb) lbl.Size = UDim2.new(1,0,1,0);
+lbl.BackgroundTransparency = 1 lbl.Text = p.Name .. " (" .. h.Health .. " HP)" lbl.TextColor3 = Color3.new(1,1,1);
+lbl.TextStrokeTransparency = 0.5 lbl.Font = Enum.Font.SourceSansBold;
+lbl.TextScaled = true;
+lbl.TextSize = 14 h.Changed:Connect(function() if h.Health <= 0 then
+hi:Destroy();
+bb:Destroy() end
+end
+) end
+for _, p in ipairs(Players:GetPlayers()) do if p.Character then
+hl(p) end
+p.CharacterAdded:Connect(hl) end
+Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(hl);
+if p.Character then
+hl(p) end
+end
+) else for _, p in ipairs(Players:GetPlayers()) do if p.Character then
+local
+hi = p.Character:FindFirstChildOfClass("Highlight");
+if hi then
+hi:Destroy() end
+local
+bb = p.Character:FindFirstChildOfClass("BillboardGui");
+if bb then
+bb:Destroy() end
+end
+end
+end
+end
+VariableFunctions.SpyChat = function() if VariableTable.SpyChat then
+local
+SG = game:GetService("StarterGui") local
+props = {Color = Color3.fromRGB(0,255,255), Font = Enum.Font.SourceSansBold, TextSize = 15, Text = "{SPY ENABLED}"} SG:SetCore("ChatMakeSystemMessage", props) local
+saymsg = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest") local
+getmsg = ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering local
+function onChat(p, msg) if not VariableTable.SpyChat then
+return end
+if p == player and msg:lower():sub(1,4) == "/spy" then
+VariableTable.SpyChat = false;
+return end
+local
+hidden = true local
+conn = getmsg.OnClientEvent:Connect(function(packet) if packet.SpeakerUserId == p.UserId and packet.Message == msg:sub(#msg - #packet.Message + 1) then
+hidden = false end
+end
+) task.wait(1);
+conn:Disconnect() if hidden then
+props.Text = "{SPY} ["..p.Name.."]: "..msg SG:SetCore("ChatMakeSystemMessage", props) end
+end
+for _, p in ipairs(Players:GetPlayers()) do p.Chatted:Connect(function(m) onChat(p, m) end
+) end
+Players.PlayerAdded:Connect(function(p) p.Chatted:Connect(function(m) onChat(p, m) end
+) end
+) end
+end
+VariableFunctions.AuraSound = function() task.spawn(function() while VariableTable.AuraSound do RemoteEvent.AuraEvent:FireServer("Turn On");
+task.wait() end
+RemoteEvent.AuraEvent:FireServer("Turn Off") end
+) end
+VariableFunctions.CrazySound = function() if not VariableTable.CrazySound then
+return end
+task.spawn(function() while VariableTable.CrazySound do for _, v in ipairs(game:GetDescendants()) do if v:IsA("Sound") then
+v.Volume = 10;
+v:Play() end
+end
+task.wait(0.7) end
+end
+) end
+VariableFunctions.PermaTarget = function() if not VariableTable.PermaTarget then
+return end
+task.spawn(function() while VariableTable.PermaTarget do local
+head = player.Character and player.Character:FindFirstChild("Head") if head then
+for name in pairs(permawhitelist) do local
+p = Players:FindFirstChild(name) if p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+if not p.Character:FindFirstChild("ForceField") then
+local
+d = (p.Character.HumanoidRootPart.Position - head.Position).unit for _, pl in ipairs(Players:GetPlayers()) do if pl.Backpack then
+for _, t in ipairs(pl.Backpack:GetChildren()) do if t.Name == "Shuriken" then
+t.HitEvent:FireServer(head.Position, d);
+task.wait() end
+end
+end
+end
+end
+end
+end
+end
+task.wait() end
+end
+) task.spawn(function() while VariableTable.PermaTarget do for _, kunai in ipairs(workspace:GetChildren()) do if kunai.Name == "ThrownKunai" then
+local
+c = kunai:FindFirstChild("creator") if c and c.Value == player then
+for name in pairs(permawhitelist) do local
+p = Players:FindFirstChild(name) if p and p.Character and p.Character:FindFirstChild("Head") and not p.Character:FindFirstChild("ForceField") then
+kunai.CFrame = p.Character.Head.CFrame kunai.Anchored = false game.Debris:AddItem(kunai, 1) end
+end
+end
+end
+end
+task.wait(0.1) end
+end
+) end
+VariableFunctions.CrashServer = function() if VariableTable.CrashServer then
+VariableFunctions._crashConn = RunService.Heartbeat:Connect(function() RemoteEvent.SpawnCharacterEvent:FireServer("RandomSpawn") end
+) elseif VariableFunctions._crashConn then
+VariableFunctions._crashConn:Disconnect() VariableFunctions._crashConn = nil end
+end
+VariableFunctions.N_A = function() if not VariableTable.N_A then
+return end
+task.spawn(function() while VariableTable.N_A do RemoteEvent.SpawnCharacterEvent:FireServer("RandomSpawn") task.wait(0.3) end
+end
+) end
+VariableFunctions.Loopbring = function() if not VariableTable.Loopbring then
+if VariableFunctions._loopbringGui then
+VariableFunctions._loopbringGui:Destroy();
+VariableFunctions._loopbringGui = nil end
+return end
+if VariableFunctions._loopbringGui then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui);
+VariableFunctions._loopbringGui = gui gui.Name = "LoopbringGui";
+gui.ResetOnSpawn = false local
+frame = Instance.new("Frame", gui) frame.Size = UDim2.new(0, 200, 0, 300);
+frame.Position = UDim2.new(0.5, -100, 0.5, -150) frame.BackgroundColor3 = T.BG;
+frame.BackgroundTransparency = 0.1 frame.BorderSizePixel = 0;
+frame.Active = true;
+frame.Draggable = true corner(frame, 8) local
+lbl = Instance.new("TextLabel", frame) lbl.Size = UDim2.new(1, 0, 0, 30);
+lbl.BackgroundTransparency = 1 lbl.Text = "Loopbring — click to toggle";
+lbl.TextColor3 = T.Text;
+lbl.Font = Enum.Font.GothamBold local
+scroll = Instance.new("ScrollingFrame", frame) scroll.Size = UDim2.new(1, 0, 1, -30);
+scroll.Position = UDim2.new(0, 0, 0, 30) scroll.CanvasSize = UDim2.new(0,0,0,0);
+scroll.BackgroundTransparency = 1 local
+active = {} local
+function bring(t, d) if active[t] then
+return end
+active[t] = true task.spawn(function() while active[t] and VariableTable.Loopbring and t.Character and t.Character:FindFirstChild("HumanoidRootPart") do local
+my = player.Character and player.Character:FindFirstChild("HumanoidRootPart") if my then
+t.Character.HumanoidRootPart.CFrame = my.CFrame * CFrame.new(2, 0, -d) end
+task.wait(0.01) end
+end
+) end
+local
+function add(p) local
+b = Instance.new("TextButton", scroll) b.Size = UDim2.new(1, -10, 0, 24);
+b.Position = UDim2.new(0, 5, 0, (#scroll:GetChildren()-1)*28) b.BackgroundTransparency = 1;
+b.TextColor3 = T.Text;
+b.Font = Enum.Font.GothamMedium;
+b.TextSize = 13 b.Text = p.Name b.MouseButton1Click:Connect(function() if active[p] then
+active[p] = nil else bring(p, 7) end
+end
+) scroll.CanvasSize = UDim2.new(0,0,0, #scroll:GetChildren()*28) end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player then
+add(p) end
+end
+Players.PlayerAdded:Connect(function(p) add(p) end
+) end
+VariableFunctions.TargetPlayer = function() if not VariableTable.TargetPlayer then
+if VariableFunctions._tGui then
+VariableFunctions._tGui:Destroy();
+VariableFunctions._tGui = nil end
+return end
+if VariableFunctions._tGui then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui);
+VariableFunctions._tGui = gui gui.Name = "TargetPlayerGui";
+gui.ResetOnSpawn = false local
+frame = Instance.new("Frame", gui) frame.Size = UDim2.new(0, 200, 0, 300);
+frame.Position = UDim2.new(0.5, -100, 0.5, -150) frame.BackgroundColor3 = T.BG;
+frame.Active = true;
+frame.Draggable = true corner(frame, 8) local
+lbl = Instance.new("TextLabel", frame) lbl.Size = UDim2.new(1, 0, 0, 30);
+lbl.BackgroundColor3 = T.Surface;
+lbl.BorderSizePixel = 0 lbl.Text = "TargetPlayer";
+lbl.TextColor3 = T.Text;
+lbl.Font = Enum.Font.GothamBold local
+scroll = Instance.new("ScrollingFrame", frame) scroll.Size = UDim2.new(1, 0, 1, -30);
+scroll.Position = UDim2.new(0, 0, 0, 30) scroll.CanvasSize = UDim2.new(0,0,0,0);
+scroll.BackgroundTransparency = 1 local
+selected local
+function fire() while selected and VariableTable.TargetPlayer do if selected.Character and selected.Character:FindFirstChild("Head") then
+local
+sh = player.Character and player.Character:FindFirstChild("Shuriken") if sh and sh:FindFirstChild("HitEvent") then
+sh.HitEvent:FireServer(selected.Character.Head.Position) end
+end
+task.wait(1/700) end
+end
+local
+function add(p) local
+b = Instance.new("TextButton", scroll) b.Size = UDim2.new(1, -10, 0, 22);
+b.Position = UDim2.new(0, 5, 0, (#scroll:GetChildren()-1)*26) b.BackgroundTransparency = 1;
+b.TextColor3 = T.Text;
+b.Text = p.Name;
+b.Font = Enum.Font.GothamMedium b.MouseButton1Click:Connect(function() selected = p;
+task.spawn(fire) end
+) scroll.CanvasSize = UDim2.new(0,0,0, #scroll:GetChildren()*26) end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player then
+add(p) end
+end
+Players.PlayerAdded:Connect(function(p) add(p) end
+) end
+VariableFunctions.DisableShur = function() if not VariableTable.DisableShur then
+if VariableFunctions._dGui then
+VariableFunctions._dGui:Destroy();
+VariableFunctions._dGui = nil end
+return end
+if VariableFunctions._dGui then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui);
+VariableFunctions._dGui = gui gui.Name = "DisableShurGui";
+gui.ResetOnSpawn = false local
+frame = Instance.new("Frame", gui) frame.Size = UDim2.new(0, 200, 0, 300);
+frame.Position = UDim2.new(0.5, -100, 0.5, -150) frame.BackgroundColor3 = T.BG;
+frame.Active = true;
+frame.Draggable = true corner(frame, 8) local
+lbl = Instance.new("TextLabel", frame) lbl.Size = UDim2.new(1, 0, 0, 30);
+lbl.BackgroundColor3 = T.Surface;
+lbl.BorderSizePixel = 0 lbl.Text = "DisableShur";
+lbl.TextColor3 = T.Text;
+lbl.Font = Enum.Font.GothamBold local
+disableAll = Instance.new("TextButton", frame) disableAll.Size = UDim2.new(1, 0, 0, 30);
+disableAll.Position = UDim2.new(0, 0, 0, 30) disableAll.BackgroundColor3 = T.Bad;
+disableAll.Text = "Disable All";
+disableAll.TextColor3 = Color3.new(1,1,1) disableAll.Font = Enum.Font.GothamBold;
+corner(disableAll, 6) local
+scroll = Instance.new("ScrollingFrame", frame) scroll.Size = UDim2.new(1, 0, 1, -60);
+scroll.Position = UDim2.new(0, 0, 0, 60) scroll.CanvasSize = UDim2.new(0,0,0,0);
+scroll.BackgroundTransparency = 1 local
+function disable(p) if not p then
+return end
+local
+function fireTool(t) if t.Name == "Shuriken" and t:FindFirstChild("HitEvent") then
+t.HitEvent:FireServer() end
+end
+if p.Backpack then
+for _, t in ipairs(p.Backpack:GetChildren()) do fireTool(t) end
+p.Backpack.ChildAdded:Connect(fireTool) end
+if p.Character then
+for _, t in ipairs(p.Character:GetChildren()) do fireTool(t) end
+p.Character.ChildAdded:Connect(fireTool) end
+end
+disableAll.MouseButton1Click:Connect(function() for _, p in ipairs(Players:GetPlayers()) do disable(p) end
+end
+) local
+function add(p) local
+b = Instance.new("TextButton", scroll) b.Size = UDim2.new(1, -10, 0, 22);
+b.Position = UDim2.new(0, 5, 0, (#scroll:GetChildren()-1)*26) b.BackgroundTransparency = 1;
+b.TextColor3 = T.Text;
+b.Text = p.Name;
+b.Font = Enum.Font.GothamMedium b.MouseButton1Click:Connect(function() disable(p) end
+) scroll.CanvasSize = UDim2.new(0,0,0, #scroll:GetChildren()*26) end
+for _, p in ipairs(Players:GetPlayers()) do add(p) end
+Players.PlayerAdded:Connect(function(p) add(p) end
+) end
+VariableFunctions.TPShur = function() if not VariableTable.TPShur then
+if VariableFunctions._tpGui then
+VariableFunctions._tpGui:Destroy();
+VariableFunctions._tpGui = nil end
+return end
+if VariableFunctions._tpGui then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui);
+VariableFunctions._tpGui = gui gui.Name = "TPShurGui";
+gui.ResetOnSpawn = false local
+frame = Instance.new("Frame", gui) frame.Size = UDim2.new(0, 200, 0, 300);
+frame.Position = UDim2.new(0.5, -100, 0.5, -150) frame.BackgroundColor3 = T.BG;
+frame.Active = true;
+frame.Draggable = true corner(frame, 8) local
+lbl = Instance.new("TextLabel", frame) lbl.Size = UDim2.new(1, 0, 0, 30);
+lbl.BackgroundColor3 = T.Surface;
+lbl.BorderSizePixel = 0 lbl.Text = "TPShur";
+lbl.TextColor3 = T.Text;
+lbl.Font = Enum.Font.GothamBold local
+scroll = Instance.new("ScrollingFrame", frame) scroll.Size = UDim2.new(1, 0, 1, -30);
+scroll.Position = UDim2.new(0, 0, 0, 30) scroll.CanvasSize = UDim2.new(0,0,0,0);
+scroll.BackgroundTransparency = 1 local
+selected task.spawn(function() while selected and VariableTable.TPShur do local
+p = Players:FindFirstChild(selected) if p and p.Character and p.Character:FindFirstChild("Head") then
+for _, kunai in ipairs(workspace:GetChildren()) do if (kunai.Name == "ThrownKunai" or kunai.Name == "ShurikenKunai") and not teleportedKunais[kunai] then
+teleportedKunais[kunai] = true kunai.Anchored = true kunai.CFrame = p.Character.Head.CFrame kunai.Anchored = false end
+end
+end
+task.wait(0.1) end
+end
+) local
+function add(p) local
+b = Instance.new("TextButton", scroll) b.Size = UDim2.new(1, -10, 0, 22);
+b.Position = UDim2.new(0, 5, 0, (#scroll:GetChildren()-1)*26) b.BackgroundTransparency = 1;
+b.TextColor3 = T.Text;
+b.Text = p.Name;
+b.Font = Enum.Font.GothamMedium b.MouseButton1Click:Connect(function() selected = p.Name end
+) scroll.CanvasSize = UDim2.new(0,0,0, #scroll:GetChildren()*26) end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player then
+add(p) end
+end
+Players.PlayerAdded:Connect(function(p) add(p) end
+) end
+VariableFunctions.BendShur = function() if not VariableTable.BendShur then
+if VariableFunctions._bendGui then
+VariableFunctions._bendGui:Destroy();
+VariableFunctions._bendGui = nil end
+return end
+if VariableFunctions._bendGui then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui);
+VariableFunctions._bendGui = gui gui.Name = "BendShurGui";
+gui.ResetOnSpawn = false local
+frame = Instance.new("Frame", gui) frame.Size = UDim2.new(0, 200, 0, 300);
+frame.Position = UDim2.new(0.5, -100, 0.5, -150) frame.BackgroundColor3 = T.BG;
+frame.Active = true;
+frame.Draggable = true corner(frame, 8) local
+lbl = Instance.new("TextLabel", frame) lbl.Size = UDim2.new(1, 0, 0, 30);
+lbl.BackgroundColor3 = T.Surface;
+lbl.BorderSizePixel = 0 lbl.Text = "BendShur";
+lbl.TextColor3 = T.Text;
+lbl.Font = Enum.Font.GothamBold local
+scroll = Instance.new("ScrollingFrame", frame) scroll.Size = UDim2.new(1, 0, 1, -30);
+scroll.Position = UDim2.new(0, 0, 0, 30) scroll.CanvasSize = UDim2.new(0,0,0,0);
+scroll.BackgroundTransparency = 1 local
+selected task.spawn(function() while selected and VariableTable.BendShur do local
+p = Players:FindFirstChild(selected) if p and p.Character and p.Character:FindFirstChild("Head") then
+for _, kunai in ipairs(workspace:GetChildren()) do if (kunai.Name == "ThrownKunai" or kunai.Name == "ShurikenKunai") and not teleportedKunais[kunai] then
+teleportedKunais[kunai] = true TS:Create(kunai, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = p.Character.Head.CFrame}):Play() end
+end
+end
+task.wait(0.5) end
+end
+) local
+function add(p) local
+b = Instance.new("TextButton", scroll) b.Size = UDim2.new(1, -10, 0, 22);
+b.Position = UDim2.new(0, 5, 0, (#scroll:GetChildren()-1)*26) b.BackgroundTransparency = 1;
+b.TextColor3 = T.Text;
+b.Text = p.Name;
+b.Font = Enum.Font.GothamMedium b.MouseButton1Click:Connect(function() selected = p.Name end
+) scroll.CanvasSize = UDim2.new(0,0,0, #scroll:GetChildren()*26) end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player then
+add(p) end
+end
+Players.PlayerAdded:Connect(function(p) add(p) end
+) end
+VariableFunctions.Commands = function() if not VariableTable.Commands then
+local
+g = playerGui:FindFirstChild("CommandsGui");
+if g then
+g:Destroy() end
+return end
+if playerGui:FindFirstChild("CommandsGui") then
+return end
+local
+gui = Instance.new("ScreenGui", playerGui) gui.Name = "CommandsGui";
+gui.ResetOnSpawn = false local
+f = Instance.new("Frame", gui) f.Size = UDim2.new(0, 480, 0, 40);
+f.Position = UDim2.new(0, 10, 1, -60) f.BackgroundColor3 = T.Surface;
+f.BorderSizePixel = 0 corner(f, 20) local
+tb = Instance.new("TextBox", f) tb.Size = UDim2.new(1, -80, 1, 0);
+tb.Position = UDim2.new(0, 10, 0, 0) tb.BackgroundTransparency = 1;
+tb.TextColor3 = T.Text;
+tb.PlaceholderText = ".tg <player> / .rtg <player>" tb.PlaceholderColor3 = T.Muted;
+tb.Font = Enum.Font.GothamMedium;
+tb.TextSize = 13;
+tb.ClearTextOnFocus = false local
+btn = Instance.new("TextButton", f) btn.Size = UDim2.new(0, 60, 1, 0);
+btn.Position = UDim2.new(1, -70, 0, 0) btn.BackgroundColor3 = T.Accent;
+btn.Text = "Run";
+btn.TextColor3 = Color3.new(1,1,1) btn.Font = Enum.Font.GothamBold;
+corner(btn, 16) local
+function run(txt) local
+cmd, name = txt:match("^(%S+)%s*(.*)") if not name or name == "" then
+return end
+for _, p in ipairs(Players:GetPlayers()) do if p.Name:lower():find(name:lower()) then
+if cmd == ".tg" then
+permawhitelist[p.Name] = true;
+SavePermaSettings() elseif cmd == ".rtg" then
+permawhitelist[p.Name] = nil;
+SavePermaSettings() elseif cmd == ".soft" then
+whitelist[p.Name] = true;
+SaveSettings() elseif cmd == ".unsoft" then
+whitelist[p.Name] = nil;
+SaveSettings() end
+return end
+end
+end
+btn.MouseButton1Click:Connect(function() run(tb.Text);
+tb.Text = "" end
+) tb.FocusLost:Connect(function(enter) if enter then
+run(tb.Text);
+tb.Text = "" end
+end
+) end
+local
+function baseRow(parent) local
+r = Instance.new("Frame") r.Size = UDim2.new(1, 0, 0, 44) r.BackgroundColor3 = T.Surface r.BackgroundTransparency = 0.4 r.BorderSizePixel = 0 r.Parent = parent corner(r, 8) local
+stroke = Instance.new("UIStroke") stroke.Color = T.Border stroke.Transparency = 0.5 stroke.Thickness = 1 stroke.Parent = r return r end
+local
+function rowLabel(row, text) local
+l = Instance.new("TextLabel") l.Text = text l.Font = Enum.Font.GothamMedium l.TextSize = 13 l.TextColor3 = T.Text l.BackgroundTransparency = 1 l.Position = UDim2.new(0, 12, 0, 0) l.Size = UDim2.new(1, -150, 1, 0) l.TextXAlignment = Enum.TextXAlignment.Left l.Parent = row return l end
+local
+function addToggle(page, label, default, callback) local
+row = baseRow(page);
+rowLabel(row, label) local
+state = default local
+btn = Instance.new("TextButton") btn.Size = UDim2.new(0, 70, 0, 26);
+btn.Position = UDim2.new(1, -82, 0.5, -13) btn.BackgroundColor3 = T.SurfaceHi;
+btn.BorderSizePixel = 0 btn.Font = Enum.Font.GothamBold;
+btn.TextSize = 12 btn.Text = state and "On" or "Off" btn.TextColor3 = state and T.Good or T.Bad btn.Parent = row;
+corner(btn, 6) btn.MouseButton1Click:Connect(function() state = not state btn.Text = state and "On" or "Off" btn.TextColor3 = state and T.Good or T.Bad if callback then
+callback(state) end
+end
+) end
+local
+function addTextbox(page, label, default, callback) local
+row = baseRow(page);
+rowLabel(row, label) local
+tb = Instance.new("TextBox") tb.Size = UDim2.new(0, 120, 0, 28);
+tb.Position = UDim2.new(1, -132, 0.5, -14) tb.BackgroundColor3 = T.SurfaceHi;
+tb.BorderSizePixel = 0 tb.Font = Enum.Font.GothamBold;
+tb.TextSize = 12 tb.Text = tostring(default);
+tb.TextColor3 = T.AccentHi tb.ClearTextOnFocus = false;
+tb.Parent = row;
+corner(tb, 6) tb.FocusLost:Connect(function() if callback then
+callback(tb.Text) end
+end
+) end
+local
+function addButton(page, label, btnText, callback, color) local
+row = baseRow(page);
+rowLabel(row, label) local
+btn = Instance.new("TextButton") btn.Size = UDim2.new(0, 100, 0, 28);
+btn.Position = UDim2.new(1, -112, 0.5, -14) btn.BackgroundColor3 = color or T.Accent;
+btn.BorderSizePixel = 0 btn.Font = Enum.Font.GothamBold;
+btn.TextSize = 12 btn.Text = btnText or "Run";
+btn.TextColor3 = Color3.new(1,1,1) btn.Parent = row;
+corner(btn, 6) btn.MouseButton1Click:Connect(callback) end
+local
+function addKeybindRow(page, label) local
+row = baseRow(page);
+rowLabel(row, label) local
+btn = Instance.new("TextButton") btn.Size = UDim2.new(0, 120, 0, 28);
+btn.Position = UDim2.new(1, -132, 0.5, -14) btn.BackgroundColor3 = T.SurfaceHi;
+btn.BorderSizePixel = 0 btn.Font = Enum.Font.GothamBold;
+btn.TextSize = 12 btn.Text = keybind.current.Name;
+btn.TextColor3 = T.AccentHi btn.Parent = row;
+corner(btn, 6) btn.MouseButton1Click:Connect(function() if keybind.listening then
+return end
+keybind.listening = true btn.Text = "Press a key...";
+btn.TextColor3 = T.Accent keybind.conn = UserInputService.InputBegan:Connect(function(input) if input.UserInputType ~= Enum.UserInputType.Keyboard then
+return end
+if input.KeyCode == Enum.KeyCode.Unknown then
+return end
+if input.KeyCode == Enum.KeyCode.Escape then
+keybind.listening = false;
+btn.Text = keybind.current.Name;
+btn.TextColor3 = T.AccentHi if keybind.conn then
+keybind.conn:Disconnect();
+keybind.conn = nil end
+return end
+keybind.current = input.KeyCode btn.Text = keybind.current.Name;
+btn.TextColor3 = T.AccentHi keybind.listening = false if keybind.conn then
+keybind.conn:Disconnect();
+keybind.conn = nil end
+end
+) end
+) return btn end
+local
+tabs = {} local
+function makeTab(name, order) local
+b = Instance.new("TextButton") b.Size = UDim2.new(0, 76, 1, 0) b.BackgroundColor3 = T.Surface;
+b.BorderSizePixel = 0 b.Font = Enum.Font.GothamBold;
+b.TextSize = 12 b.Text = name;
+b.TextColor3 = T.Muted b.LayoutOrder = order;
+b.Parent = tabBar corner(b, 8) local
+page = Instance.new("ScrollingFrame") page.Size = UDim2.new(1, 0, 1, 0) page.BackgroundTransparency = 1;
+page.BorderSizePixel = 0 page.CanvasSize = UDim2.new(0,0,0,0) page.ScrollBarThickness = 4 page.ScrollBarImageColor3 = T.Accent page.Visible = false;
+page.Parent = content local
+pl = Instance.new("UIListLayout");
+pl.Padding = UDim.new(0, 8);
+pl.Parent = page pl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() page.CanvasSize = UDim2.new(0, 0, 0, pl.AbsoluteContentSize.Y) end
+) tabs[b] = page b.MouseButton1Click:Connect(function() for btn, pg in pairs(tabs) do local
+active = (btn == b) pg.Visible = active TS:Create(btn, TweenInfo.new(0.15), { BackgroundColor3 = active and T.Accent or T.Surface, TextColor3 = active and Color3.new(1,1,1) or T.Muted, }):Play() end
+end
+) b.MouseEnter:Connect(function() if b.BackgroundColor3 ~= T.Accent then
+TS:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = T.SurfaceHi}):Play() end
+end
+) b.MouseLeave:Connect(function() if b.BackgroundColor3 ~= T.Accent then
+TS:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = T.Surface}):Play() end
+end
+) return page end
+local
+homePage = makeTab("Home", 1) local
+trainPage = makeTab("Train", 2) local
+combatPage = makeTab("Combat", 3) local
+playersPage = makeTab("Players", 4) local
+serverPage = makeTab("Server", 5) local
+miscPage = makeTab("Misc", 6) local
+settingsPage = makeTab("Settings", 7) local
+adminPage if isAdmin then
+adminPage = makeTab("🔒 Admin", 8) end
+do local
+row = baseRow(homePage) local
+lbl = Instance.new("TextLabel", row) lbl.Size = UDim2.new(1, -20, 1, 0);
+lbl.Position = UDim2.new(0, 10, 0, 0) lbl.BackgroundTransparency = 1 lbl.Font = Enum.Font.GothamBlack;
+lbl.TextSize = 15;
+lbl.TextColor3 = T.Text lbl.TextXAlignment = Enum.TextXAlignment.Left lbl.Text = "Welcome, " .. player.Name local
+function statRow(text) local
+r = baseRow(homePage) local
+l = rowLabel(r, text) l.Font = Enum.Font.GothamMedium return l end
+local
+playersLbl = statRow("Players in server: ...") local
+mostNinLbl = statRow("Most nin: ...") local
+mostRepLbl = statRow("Most rep: ...") local
+fpsLbl = statRow("FPS: ...") local
+pingLbl = statRow("Ping: ...") statRow("Remade by @785 — 785 Clan strongest in NA") task.spawn(function() while true do local
+c = #Players:GetPlayers();
+playersLbl.Text = "Players in server: "..c.."/20" local
+bestNin, bestRep, bestNinPlr, bestRepPlr = 0, 0, nil, nil for _, p in ipairs(Players:GetPlayers()) do local
+ls = p:FindFirstChild("leaderstats") if ls then
+local
+nin = ls:FindFirstChild("Ninjutsu");
+local
+rep = ls:FindFirstChild("Reputation") if nin and nin.Value > bestNin then
+bestNin = nin.Value;
+bestNinPlr = p end
+if rep and rep.Value > bestRep then
+bestRep = rep.Value;
+bestRepPlr = p end
+end
+end
+if bestNinPlr then
+mostNinLbl.Text = "Most nin: "..bestNinPlr.Name.." — "..comma_value(math.floor(bestNin)) else mostNinLbl.Text = "Most nin: —" end
+if bestRepPlr then
+mostRepLbl.Text = "Most rep: "..bestRepPlr.Name.." — "..comma_value(math.floor(bestRep)) else mostRepLbl.Text = "Most rep: —" end
+task.wait(1) end
+end
+) task.spawn(function() local
+frame = 0;
+local
+t = 0 RunService.RenderStepped:Connect(function(dt) frame = frame + 1;
+t = t + dt if t >= 1 then
+fpsLbl.Text = "FPS: "..frame;
+frame = 0;
+t = 0 end
+end
+) end
+) task.spawn(function() while true do pingLbl.Text = "Ping: "..math.floor(player:GetNetworkPing() * 1000).." ms" task.wait(3) end
+end
+) end
+local
+function hubToggle(page, key, default) addToggle(page, key, default or VariableTable[key] or false, function(on) VariableTable[key] = on if VariableFunctions[key] then
+VariableFunctions[key]() end
+end
+) end
+hubToggle(trainPage, "AutoTrain") hubToggle(trainPage, "AutoEquip") hubToggle(trainPage, "NoTS") hubToggle(trainPage, "SeatESP") hubToggle(trainPage, "AutoRespawn") hubToggle(trainPage, "AntiAfk") hubToggle(trainPage, "Noclip") hubToggle(trainPage, "Freeze") hubToggle(trainPage, "NoFF") hubToggle(trainPage, "HCCamp") hubToggle(trainPage, "AnimTrain") hubToggle(trainPage, "TPToChair") addTextbox(trainPage, "TrainRate", "0.7", function(v) VariableTable.TrainRate = tonumber(v) or 0.7 end
+) addTextbox(trainPage, "TrainAmount", "20", function(v) VariableTable.TrainAmount = tonumber(v) or 20 end
+)  hubToggle(combatPage, "AFShur") hubToggle(combatPage, "AFStlShurs") hubToggle(combatPage, "FastSwitch") hubToggle(combatPage, "TrgtAllPlyr") hubToggle(combatPage, "AutoTarget") hubToggle(combatPage, "AutoWLTarget") hubToggle(combatPage, "NukeServer") hubToggle(combatPage, "HoldToFire") hubToggle(combatPage, "HoldToShoot") hubToggle(combatPage, "AHSword") hubToggle(combatPage, "UseAllShur") hubToggle(combatPage, "EqpAllShur") hubToggle(combatPage, "UseAllSwrd") hubToggle(combatPage, "EqpAllSwrd") hubToggle(combatPage, "UseAllTP") hubToggle(combatPage, "EqpAllTP") hubToggle(combatPage, "TargetPlayer") hubToggle(combatPage, "DisableShur") hubToggle(combatPage, "TPShur") hubToggle(combatPage, "BendShur") hubToggle(combatPage, "AntiLoop") hubToggle(combatPage, "DeathEquip") hubToggle(combatPage, "Loopbring") addButton(combatPage, "RandomSpawn", "Run", function() VariableTable.N_A = true;
+VariableFunctions.N_A() end
+) addButton(combatPage, "FastTools (n/a)", "Info", function() warn("FastTools payload was VM-obfuscated in the original — cannot be ported.") end
+, T.Muted)  addButton(playersPage, "Respawn", "Run", function() RemoteEvent.SpawnCharacterEvent:FireServer("MainSpawn") end
+) addButton(playersPage, "Clone5", "Run", function() spawnClone(5) end
+) addButton(playersPage, "Clone7", "Run", function() spawnClone(7) end
+) addButton(playersPage, "Clone10", "Run", function() spawnClone(10) end
+) addButton(playersPage, "Clone20", "Run", function() spawnClone(20) end
+) addButton(playersPage, "Clone50", "Run", function() spawnClone(50) end
+) addButton(playersPage, "Clone70", "Run", function() spawnClone(70) end
+) addButton(playersPage, "Clone100", "Run", function() spawnClone(100) end
+) addToggle(playersPage, "NNinjutsu", false, function(on) if on then
+task.spawn(function() repeat task.wait() until player.Backpack:WaitForChild("Train") player.Backpack.Train.Parent = player.Character while VariableTable.NNinjutsu do RemoteEvent.AddPowerEvent:FireServer("FromTraining", -2e48) task.wait(0.72) RemoteEvent.AddPowerEvent:FireServer("FromTraining", -19916241294912496129491248999999.99) task.wait(0.72) end
+end
+) VariableTable.NNinjutsu = true else VariableTable.NNinjutsu = false end
+end
+) addToggle(playersPage, "RnbwShur (give all)", false, function(on) rnbwShurOn = on if not on then
+return end
+task.spawn(function() while rnbwShurOn do local
+items = { {"Shuriken","Shuriken1"},{"Shuriken","Shuriken2"},{"Shuriken","Shuriken3"}, {"Shuriken","Shuriken4"},{"Shuriken","Shuriken5"},{"Shuriken","Shuriken6"}, {"Shuriken","Shuriken7"},{"Shuriken","Shuriken8Ying"},{"Shuriken","Shuriken8Yang"}, {"Shuriken","Shuriken9Ying"},{"Shuriken","Shuriken9Yang"}, {"VipPass","Chakra"},{"RainbowPass","MetallicThrowingKnives"},{"PizzaPass","PizzaKunai"}, {"FunnyThrowPass","BoomerangDagger"},{"FunnyThrowPass","DarkageKunai"},{"FunnyThrowPass","GhostDagger"}, {"FunnyThrowPass","GrabBag"},{"FunnyThrowPass","OctopusCannon"},{"FunnyThrowPass","StarfishShuriken"}, {"FunnyThrowPass","ThrowingDonuts"},{"FunnyThrowPass","WarRock"}, {"FunnyThrowPass","FlowerStar1"},{"FunnyThrowPass","FlowerStar3"}, } for _, it in ipairs(items) do if not rnbwShurOn then
+break end
+giveItem(it[1], it[2]);
+task.wait(0.01) end
+end
+end
+) end
+) addToggle(playersPage, "RnbwYin", false, function(on) rnbwYinOn = on;
+if not on then
+return end
+task.spawn(function() while rnbwYinOn do for i = 12, 20 do if not rnbwYinOn then
+break end
+giveItem("Cloth", "Ying"..i);
+task.wait(0.01) end
+end
+end
+) end
+) addToggle(playersPage, "RnbwYang", false, function(on) rnbwYangOn = on;
+if not on then
+return end
+task.spawn(function() while rnbwYangOn do for i = 12, 20 do if not rnbwYangOn then
+break end
+giveItem("Cloth", "Yang"..i);
+task.wait(0.01) end
+end
+end
+) end
+) addToggle(playersPage, "HeartShur", false, function(on) heartShurOn = on;
+if not on then
+return end
+local
+points = {} for i = 0, 31 do local
+a = (i / 32) * math.pi * 2 table.insert(points, Vector3.new(16*math.sin(a)^3, 13*math.cos(a) - 5*math.cos(2*a) - 2*math.cos(3*a) - math.cos(4*a), 0)) end
+task.spawn(function() workspace.ChildAdded:Connect(function(c) if not heartShurOn then
+return end
+if c.Name == "ThrownKunai" and c:IsA("BasePart") then
+local
+head = player.Character and player.Character:FindFirstChild("Head") if not head then
+return end
+local
+base = head.Position + Vector3.new(0, 20, -10) task.spawn(function() for _, pt in ipairs(points) do if not heartShurOn then
+break end
+TS:Create(c, TweenInfo.new(0.01, Enum.EasingStyle.Linear), {Position = base + pt}):Play() task.wait(0.01) end
+end
+) end
+end
+) end
+) end
+) addToggle(playersPage, "LoveShur", false, function(on) loveShurOn = on;
+if not on then
+return end
+task.spawn(function() workspace.ChildAdded:Connect(function(c) if not loveShurOn then
+return end
+if c.Name == "ThrownKunai" and c:IsA("BasePart") then
+local
+head = player.Character and player.Character:FindFirstChild("Head") if not head then
+return end
+local
+base = head.Position + Vector3.new(0, 20, -10) task.spawn(function() for i = 1, 30 do if not loveShurOn then
+break end
+local
+a = i / 30 * math.pi * 2 local
+p = Vector3.new(20*math.sin(a), 15*math.cos(a) + 5*math.cos(2*a), 0) TS:Create(c, TweenInfo.new(0.02, Enum.EasingStyle.Linear), {Position = base + p}):Play() task.wait(0.02) end
+end
+) end
+end
+) end
+) end
+) addToggle(playersPage, "SwordAura", false, function(on) if on and player.Character then
+local
+sw = player.Character:FindFirstChild("Sword") if sw then
+local
+h = sw:FindFirstChild("Handle") local
+eff = h and h:FindFirstChild("SwordEff1") if eff then
+eff.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(0,0,0)), ColorSequenceKeypoint.new(0.5, Color3.new(0,0,0)), ColorSequenceKeypoint.new(1, Color3.new(0,0,0)), }) eff.Rate = 25;
+eff.LightEmission = 0 end
+end
+end
+end
+) addToggle(playersPage, "BlackAura", false, function(on) if not on then
+return end
+local
+parts = {"UpperTorso","RightLowerLeg","LeftLowerLeg","RightUpperArm","LeftUpperArm"} local
+cs = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(0,0,0)), ColorSequenceKeypoint.new(0.5, Color3.new(0,0,0)), ColorSequenceKeypoint.new(1, Color3.new(0,0,0)), }) local
+function apply(c) for _, p in ipairs(parts) do local
+bp = c:FindFirstChild(p) local
+eff = bp and bp:FindFirstChild("LightingAuraEff") if eff then
+eff.Color = cs;
+eff.LightEmission = 0 end
+end
+end
+if player.Character then
+apply(player.Character) end
+player.CharacterAdded:Connect(apply) end
+) addButton(playersPage, "EqpYinShur", "Give", function() giveItem("Shuriken", "Shuriken9Ying") end
+) addButton(playersPage, "EqpYngShur", "Give", function() giveItem("Shuriken", "Shuriken9Yang") end
+) addButton(playersPage, "EqpYinSwrd", "Give", function() giveItem("Sword", "UltraKatana") end
+) addButton(playersPage, "EqpYngSwrd", "Give", function() giveItem("Sword", "BlackAndWhiteWingedSword") end
+) addButton(playersPage, "EqpYinClth", "Give", function() giveItem("Cloth", "Ying26") end
+) addButton(playersPage, "EqpYngClth", "Give", function() giveItem("Cloth", "Yang26") end
+)  hubToggle(serverPage, "ESP") hubToggle(serverPage, "SpyChat") hubToggle(serverPage, "AuraSound") hubToggle(serverPage, "CrazySound") hubToggle(serverPage, "PermaTarget") hubToggle(serverPage, "CrashServer") hubToggle(serverPage, "Commands") addButton(serverPage, "Rejoin", "Run", function() TeleportService:Teleport(game.PlaceId, player) end
+) addButton(serverPage, "ServerHop", "Hop", function() local
+url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?limit=100" local
+ok, res = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end
+) if not ok or not res or not res.data then
+return end
+local
+servers = {} for _, s in ipairs(res.data) do if s.playing < s.maxPlayers and s.id ~= game.JobId then
+table.insert(servers, s.id) end
+end
+if #servers > 0 then
+TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(#servers)], player) end
+end
+)  addToggle(miscPage, "InfJump", false, function(on) if on then
+miscPage._infJumpConn = UserInputService.JumpRequest:Connect(function() local
+h = player.Character and player.Character:FindFirstChildOfClass("Humanoid") if h then
+h:ChangeState(Enum.HumanoidStateType.Jumping) end
+end
+) elseif miscPage._infJumpConn then
+miscPage._infJumpConn:Disconnect();
+miscPage._infJumpConn = nil end
+end
+) addButton(miscPage, "IY Admin", "Load", function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end
+) addButton(miscPage, "SimpleSpy", "Load", function() loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RS/main/SimpleSpyMobile"))() end
+) addButton(miscPage, "DEX Explorer", "Load", function() loadstring(game:HttpGet("https://github.com/Hosvile/DEX-Explorer/releases/latest/download/main.lua", true))() end
+) addTextbox(miscPage, "JumpPower", "100", function(v) local
+n = tonumber(v) if n and player.Character then
+local
+h = player.Character:FindFirstChildOfClass("Humanoid") if h then
+h.JumpPower = n end
+end
+end
+) addTextbox(miscPage, "WalkSpeed", "100", function(v) local
+n = tonumber(v) if n and player.Character then
+local
+h = player.Character:FindFirstChildOfClass("Humanoid") if h then
+h.WalkSpeed = n end
+end
+end
+) addButton(miscPage, "RnbwSwrd", "Give", function() giveItem("RainbowPass", "UnicornSword") end
+) addButton(miscPage, "RnbwShur", "Give", function() giveItem("RainbowPass", "MetallicThrowingKnives") end
+) addButton(miscPage, "Scythe", "Give", function() giveItem("VipPass", "ScytheOfSingularity") end
+) addButton(miscPage, "Chakra", "Give", function() giveItem("VipPass", "Chakra") end
+) addButton(miscPage, "PizzaSwrd", "Give", function() giveItem("PizzaPass", "PizzaSword") end
+) addButton(miscPage, "PizzaKunai","Give", function() giveItem("PizzaPass", "PizzaKunai") end
+) addButton(miscPage, "AxeSwrd", "Give", function() giveItem("FunnySwordPass", "StopSignAxe") end
+) addButton(miscPage, "GhstDgger", "Give", function() giveItem("FunnyThrowPass", "GhostDagger") end
+) addButton(miscPage, "Mackerel", "Give", function() giveItem("FunnySwordPass", "Mackerel") end
+) addButton(miscPage, "OctpsShur", "Give", function() giveItem("FunnyThrowPass", "OctopusCannon") end
+) addButton(miscPage, "PanSwrd", "Give", function() giveItem("FunnySwordPass", "Frying Pan") end
+) addButton(miscPage, "DonutShur", "Give", function() giveItem("FunnyThrowPass", "ThrowingDonuts") end
+) addButton(miscPage, "PizzaCloth","Give", function() giveItem("PizzaPass", "PizzaPackCloth") end
+)  addToggle(settingsPage, "Compact UI (Mobile)", false, function(on) compactMode = on local
+targetScale = getScale() TS:Create(mainScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = targetScale}):Play() end
+) local
+keybindBtn = addKeybindRow(settingsPage, "Toggle UI Keybind") do local
+row = baseRow(settingsPage);
+rowLabel(row, "Reset keybind to LeftAlt") local
+reset = Instance.new("TextButton") reset.Size = UDim2.new(0, 120, 0, 28);
+reset.Position = UDim2.new(1, -132, 0.5, -14) reset.BackgroundColor3 = T.SurfaceHi;
+reset.BorderSizePixel = 0 reset.Font = Enum.Font.GothamBold;
+reset.TextSize = 12 reset.Text = "Reset";
+reset.TextColor3 = T.AccentHi reset.Parent = row;
+corner(reset, 6) reset.MouseButton1Click:Connect(function() keybind.current = Enum.KeyCode.LeftAlt keybindBtn.Text = keybind.current.Name keybindBtn.TextColor3 = T.AccentHi end
+) end
+if isAdmin and adminPage then
+do local
+r = baseRow(adminPage) local
+l = Instance.new("TextLabel", r) l.Size = UDim2.new(1, -20, 1, 0);
+l.Position = UDim2.new(0, 10, 0, 0) l.BackgroundTransparency = 1 l.Font = Enum.Font.GothamBlack;
+l.TextSize = 13;
+l.TextColor3 = T.AccentHi l.TextXAlignment = Enum.TextXAlignment.Left l.Text = "🔒 " .. player.Name .. " — id " .. player.UserId end
+do local
+r = baseRow(adminPage);
+rowLabel(r, "Remote Keylist") local
+lbl = Instance.new("TextLabel") lbl.Size = UDim2.new(0, 140, 1, 0);
+lbl.Position = UDim2.new(1, -170, 0, 0) lbl.BackgroundTransparency = 1;
+lbl.TextXAlignment = Enum.TextXAlignment.Right lbl.Font = Enum.Font.GothamBold;
+lbl.TextSize = 12 local
+function relabel() lbl.Text = fetchFailed and "✗ unreachable" or ("✓ " .. #remoteKeys .. " keys") lbl.TextColor3 = fetchFailed and T.Bad or T.Good end
+relabel() local
+btn = Instance.new("TextButton") btn.Size = UDim2.new(0, 70, 0, 28);
+btn.Position = UDim2.new(1, -80, 0.5, -14) btn.BackgroundColor3 = T.Accent;
+btn.BorderSizePixel = 0 btn.Font = Enum.Font.GothamBold;
+btn.TextSize = 11 btn.Text = "Sync";
+btn.TextColor3 = Color3.new(1,1,1) btn.Parent = r;
+corner(btn, 6) btn.MouseButton1Click:Connect(function() FetchRemoteKeys();
+relabel() end
+) end
+local
+noteBox do local
+r = baseRow(adminPage) local
+lbl = rowLabel(r, "Note (who it's for)") lbl.Size = UDim2.new(0, 140, 1, 0) noteBox = Instance.new("TextBox") noteBox.Size = UDim2.new(1, -160, 0, 30);
+noteBox.Position = UDim2.new(0, 148, 0.5, -15) noteBox.BackgroundColor3 = T.SurfaceHi;
+noteBox.BorderSizePixel = 0 noteBox.Font = Enum.Font.GothamMedium;
+noteBox.TextSize = 12 noteBox.Text = "";
+noteBox.PlaceholderText = "e.g. bob's alt, clan member" noteBox.PlaceholderColor3 = T.Muted;
+noteBox.TextColor3 = T.Text noteBox.ClearTextOnFocus = false;
+noteBox.TextXAlignment = Enum.TextXAlignment.Left noteBox.Parent = r;
+corner(noteBox, 6) local
+pad = Instance.new("UIPadding", noteBox) pad.PaddingLeft = UDim.new(0, 10) end
+local
+keyListScroll, refreshKeyList  do local
+r = baseRow(adminPage) local
+createBtn = Instance.new("TextButton") createBtn.Size = UDim2.new(0, 140, 0, 28);
+createBtn.Position = UDim2.new(1, -280, 0.5, -14) createBtn.BackgroundColor3 = T.Good;
+createBtn.BorderSizePixel = 0 createBtn.Font = Enum.Font.GothamBold;
+createBtn.TextSize = 11 createBtn.TextColor3 = Color3.new(1,1,1);
+createBtn.Text = "Create & Upload" createBtn.Parent = r;
+corner(createBtn, 6) createBtn.MouseButton1Click:Connect(function() local
+note = noteBox.Text local
+key = GenerateKey() local
+ok = PushKeyToGitHub(key, note) if ok then
+if setclipboard then
+pcall(function() setclipboard(key) end
+) end
+noteBox.Text = "" FetchRemoteKeys() if refreshKeyList then
+refreshKeyList() end
+pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Key uploaded", Text = key .. " (copied)", Duration = 15}) end
+) else pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Upload failed", Text = "Check PAT / executor HTTP", Duration = 8}) end
+) end
+end
+) local
+localBtn = Instance.new("TextButton") localBtn.Size = UDim2.new(0, 128, 0, 28);
+localBtn.Position = UDim2.new(1, -132, 0.5, -14) localBtn.BackgroundColor3 = T.Accent;
+localBtn.BorderSizePixel = 0 localBtn.Font = Enum.Font.GothamBold;
+localBtn.TextSize = 11 localBtn.TextColor3 = Color3.new(1,1,1);
+localBtn.Text = "Create Local Only" localBtn.Parent = r;
+corner(localBtn, 6) localBtn.MouseButton1Click:Connect(function() local
+key = GenerateKey() validKeys[key] = true if writefile then
+local
+list = {};
+for k in pairs(validKeys) do table.insert(list, k) end
+writefile(keysFile, HttpService:JSONEncode({keys = list})) end
+if setclipboard then
+pcall(function() setclipboard(key) end
+) end
+pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Key (local)", Text = key, Duration = 15}) end
+) end
+) end
+do local
+r = baseRow(adminPage);
+rowLabel(r, "Active Keys") local
+btn = Instance.new("TextButton") btn.Size = UDim2.new(0, 80, 0, 28);
+btn.Position = UDim2.new(1, -92, 0.5, -14) btn.BackgroundColor3 = T.SurfaceHi;
+btn.BorderSizePixel = 0 btn.Font = Enum.Font.GothamBold;
+btn.TextSize = 11 btn.TextColor3 = T.AccentHi;
+btn.Text = "Refresh" btn.Parent = r;
+corner(btn, 6) btn.MouseButton1Click:Connect(function() if refreshKeyList then
+refreshKeyList() end
+end
+) end
+keyListScroll = Instance.new("ScrollingFrame") keyListScroll.Size = UDim2.new(1, 0, 0, 220) keyListScroll.BackgroundColor3 = T.Surface keyListScroll.BackgroundTransparency = 0.3 keyListScroll.BorderSizePixel = 0 keyListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y keyListScroll.CanvasSize = UDim2.new(0,0,0,0) keyListScroll.ScrollBarThickness = 4 keyListScroll.ScrollBarImageColor3 = T.Accent keyListScroll.Parent = adminPage corner(keyListScroll, 8) local
+klPad = Instance.new("UIPadding", keyListScroll) klPad.PaddingTop = UDim.new(0, 6) klPad.PaddingBottom = UDim.new(0, 6) klPad.PaddingLeft = UDim.new(0, 6) klPad.PaddingRight = UDim.new(0, 6) local
+klList = Instance.new("UIListLayout") klList.Padding = UDim.new(0, 4) klList.Parent = keyListScroll klList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() keyListScroll.CanvasSize = UDim2.new(0, 0, 0, klList.AbsoluteContentSize.Y + 12) end
+) refreshKeyList = function() for _, c in ipairs(keyListScroll:GetChildren()) do if c:IsA("Frame") or c:IsA("TextButton") or c:IsA("TextLabel") then
+c:Destroy() end
+end
+local
+keys = FetchGistKeys() if #keys == 0 then
+local
+empty = Instance.new("TextLabel", keyListScroll) empty.Size = UDim2.new(1, 0, 0, 40) empty.BackgroundTransparency = 1 empty.Text = "(no keys yet — create one above)" empty.TextColor3 = T.Muted;
+empty.Font = Enum.Font.GothamMedium;
+empty.TextSize = 12 return end
+for _, e in ipairs(keys) do local
+k, note, created = parseEntry(e) local
+row = Instance.new("Frame", keyListScroll) row.Size = UDim2.new(1, -4, 0, 34) row.BackgroundColor3 = T.SurfaceHi row.BackgroundTransparency = 0.5 row.BorderSizePixel = 0 corner(row, 6) local
+info = Instance.new("TextLabel", row) info.Size = UDim2.new(1, -90, 1, 0);
+info.Position = UDim2.new(0, 8, 0, 0) info.BackgroundTransparency = 1 info.Font = Enum.Font.GothamMedium;
+info.TextSize = 11 info.TextColor3 = T.Text;
+info.TextXAlignment = Enum.TextXAlignment.Left info.TextTruncate = Enum.TextTruncate.AtEnd local
+bits = { k } if note ~= "" then
+table.insert(bits, "· " .. note) end
+if created ~= "" then
+table.insert(bits, "· " .. created) end
+info.Text = table.concat(bits, "  ") local
+rev = Instance.new("TextButton", row) rev.Size = UDim2.new(0, 70, 0, 24);
+rev.Position = UDim2.new(1, -78, 0.5, -12) rev.BackgroundColor3 = T.Bad;
+rev.BorderSizePixel = 0 rev.Font = Enum.Font.GothamBold;
+rev.TextSize = 11 rev.TextColor3 = Color3.new(1,1,1);
+rev.Text = "Revoke" corner(rev, 5) rev.MouseButton1Click:Connect(function() if RevokeFromGitHub(k) then
+FetchRemoteKeys() refreshKeyList() pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Revoked on GitHub", Text = k, Duration = 6}) end
+) else pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Revoke failed", Text = "See console", Duration = 6}) end
+) end
+end
+) end
+end
+task.spawn(function() task.wait(0.5);
+refreshKeyList() end
+)  addToggle(adminPage, "Untargetable (jitter)", false, function(on) VariableTable.AdminUntargetable = on if VariableFunctions._jitterConn then
+VariableFunctions._jitterConn:Disconnect();
+VariableFunctions._jitterConn = nil end
+if not on then
+return end
+VariableFunctions._jitterConn = RunService.Heartbeat:Connect(function() if not VariableTable.AdminUntargetable then
+return end
+local
+c = player.Character;
+local
+root = c and c:FindFirstChild("HumanoidRootPart") if not root then
+return end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player and p.Character then
+local
+pr = p.Character:FindFirstChild("HumanoidRootPart") if pr and (pr.Position - root.Position).Magnitude < 60 then
+root.CFrame = root.CFrame + Vector3.new((math.random()-0.5)*5, 0, (math.random()-0.5)*5) return end
+end
+end
+end
+) end
+) addToggle(adminPage, "Dodge Shuriken", false, function(on) VariableTable.AdminDodgeShuriken = on if VariableFunctions._dodgeShurConn then
+VariableFunctions._dodgeShurConn:Disconnect();
+VariableFunctions._dodgeShurConn = nil end
+if not on then
+return end
+local
+last = 0 VariableFunctions._dodgeShurConn = RunService.Heartbeat:Connect(function() if not VariableTable.AdminDodgeShuriken or tick() - last < 0.15 then
+return end
+local
+c = player.Character;
+local
+head = c and c:FindFirstChild("Head") local
+root = c and c:FindFirstChild("HumanoidRootPart") if not head or not root then
+return end
+for _, o in ipairs(workspace:GetChildren()) do if (o.Name == "ThrownKunai" or o.Name == "ShurikenKunai") and o:IsA("BasePart") then
+local
+cr = o:FindFirstChild("creator");
+local
+mine = cr and cr.Value == player if not mine and (o.Position - head.Position).Magnitude < 45 then
+local
+t = Vector3.new(head.Position.X - o.Position.X, 0, head.Position.Z - o.Position.Z) if t.Magnitude < 0.1 then
+t = Vector3.new(1,0,0) end
+t = t.Unit local
+dest = root.Position + Vector3.new(-t.Z, 0, t.X) * 22 + Vector3.new(0, 3, 0) root.CFrame = CFrame.new(dest, dest + root.CFrame.LookVector * 10) last = tick();
+return end
+end
+end
+end
+) end
+) addToggle(adminPage, "Dodge Sword", false, function(on) VariableTable.AdminDodgeSword = on if VariableFunctions._dodgeSwConn then
+VariableFunctions._dodgeSwConn:Disconnect();
+VariableFunctions._dodgeSwConn = nil end
+if not on then
+return end
+local
+last = 0 VariableFunctions._dodgeSwConn = RunService.Heartbeat:Connect(function() if not VariableTable.AdminDodgeSword or tick() - last < 0.2 then
+return end
+local
+c = player.Character;
+local
+root = c and c:FindFirstChild("HumanoidRootPart") if not root then
+return end
+for _, p in ipairs(Players:GetPlayers()) do if p ~= player and p.Character and p.Character:FindFirstChild("Sword") then
+local
+pr = p.Character:FindFirstChild("HumanoidRootPart") if pr and (pr.Position - root.Position).Magnitude < 16 then
+local
+a = Vector3.new(root.Position.X - pr.Position.X, 0, root.Position.Z - pr.Position.Z) if a.Magnitude < 0.1 then
+a = Vector3.new(1,0,0) end
+a = a.Unit local
+dest = root.Position + a * 30 + Vector3.new(0, 6, 0) root.CFrame = CFrame.new(dest, dest + root.CFrame.LookVector * 10) last = tick();
+return end
+end
+end
+end
+) end
+) do local
+r = baseRow(adminPage);
+rowLabel(r, "Panic — teleport to sky") local
+b = Instance.new("TextButton") b.Size = UDim2.new(0, 120, 0, 28);
+b.Position = UDim2.new(1, -132, 0.5, -14) b.BackgroundColor3 = T.Bad;
+b.BorderSizePixel = 0 b.Font = Enum.Font.GothamBold;
+b.TextSize = 12 b.TextColor3 = Color3.new(1,1,1);
+b.Text = "PANIC" b.Parent = r;
+corner(b, 6) b.MouseButton1Click:Connect(function() local
+c = player.Character;
+local
+root = c and c:FindFirstChild("HumanoidRootPart") if root then
+root.CFrame = CFrame.new(root.Position.X, 8000, root.Position.Z) end
+end
+) end
+end
+for btn, pg in pairs(tabs) do pg.Visible = true btn.BackgroundColor3 = T.Accent btn.TextColor3 = Color3.new(1,1,1) break end
+LoadSettings() LoadPermaSettings() if keyAuthenticated then
+mobileBtn.Visible = true setOpen(true)  task.wait(0.05) if tabBar then
+for _, layout in ipairs(tabBar:GetChildren()) do if layout:IsA("UIListLayout") then
+layout.Enabled = false layout.Enabled = true end
+end
+end
+if content then
+local
+pl = content:FindFirstChildOfClass("UIListLayout") if pl then
+pl.Enabled = false;
+pl.Enabled = true end
+end
+for btn, pg in pairs(tabs) do pg.Visible = true btn.BackgroundColor3 = T.Accent btn.TextColor3 = Color3.new(1, 1, 1) break end
+else mobileBtn.Visible = false keyScreen.Enabled = true end
+player.CharacterAdded:Connect(function(c) task.wait(0.2) if VariableTable.AutoRespawn then
+RemoteEvent.SpawnCharacterEvent:FireServer("MainSpawn") local
+blur = Lighting:FindFirstChild("Blur");
+if blur then
+blur.Enabled = false end
+end
+if respos then
+for _ = 1, 10 do local
+r = c:FindFirstChild("HumanoidRootPart");
+if r then
+r.CFrame = respos end
+task.wait() end
+end
+charrespawning = false end
+)    if keyAuthenticated and not isAdmin then
+task.spawn(function() while true do task.wait(300) FetchRemoteKeys() if not readfile or not isfile or not isfile(authFile) then
+break end
+local
+ok, saved = pcall(readfile, authFile) if ok and saved and not IsValidKey(saved) then
+pcall(delfile, authFile) keyAuthenticated = false main.Visible = false mobileBtn.Visible = false pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Session revoked", Text = "Your key is no longer valid.", Duration = 8}) end
+) if keyScreen and keyScreen.Parent then
+keyScreen.Enabled = true end
+break end
+end
+end
+) end
